@@ -1,54 +1,58 @@
+version: '3.8'
+
 services:
   db:
     image: postgres:16-alpine
-    container_name: docuflow_db
+    container_name: tienda-libreria-db
     environment:
       POSTGRES_USER: postgres
       POSTGRES_PASSWORD: postgres
-      POSTGRES_DB: docuflow
+      POSTGRES_DB: tienda-libreria
     ports:
-      - "5446:5432"   # host:container  ✅
+      - "5433:5432"   # Puerto mapeado para acceso desde el host
     volumes:
       - db-data:/var/lib/postgresql/data
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      test: ["CMD-SHELL", "pg_isready -U postgres -d tienda-libreria"]
       interval: 5s
       timeout: 3s
       retries: 10
 
   app:
     build: .
-    container_name: docuflow_app
+    container_name: tienda-libreria-app
     command: ["npm", "run", "dev", "--", "--host", "0.0.0.0"]
     ports:
       - "5173:5173"
     environment:
-      NODE_ENV: development
-      DATABASE_URL: postgresql://postgres:postgres@db:5432/docuflow          # ✅
-      SHADOW_DATABASE_URL: postgresql://postgres:postgres@db:5432/docuflow_shadow # ✅
-      UPLOAD_DIR: /data/uploads
-      EXTRACTION_DIR: /data/extractions
-      MAX_UPLOAD_MB: 20
+      - NODE_ENV=development
+      - DATABASE_URL=postgresql://postgres:postgres@db:5432/tienda-libreria
+      - SHADOW_DATABASE_URL=postgresql://postgres:postgres@db:5432/tienda-libreria_shadow
+      - UPLOAD_DIR=/data/uploads
+      - EXTRACTION_DIR=/data/extractions
+      - MAX_UPLOAD_MB=20
     volumes:
       - .:/usr/src/app
+      - /usr/src/app/node_modules
       - data-uploads:/data/uploads
       - data-extractions:/data/extractions
     depends_on:
       db:
         condition: service_healthy
+    restart: unless-stopped
 
   worker:
     build: .
-    container_name: docuflow_worker
+    container_name: tienda-libreria-worker
     command: ["npm", "run", "worker:dev"]
     environment:
-      NODE_ENV: development
-      DATABASE_URL: postgresql://postgres:postgres@db:5432/docuflow
-      UPLOAD_DIR: /data/uploads
-      EXTRACTION_DIR: /data/extractions
+      - NODE_ENV=development
+      - DATABASE_URL=postgresql://postgres:postgres@db:5432/tienda-libreria
+      - UPLOAD_DIR=/data/uploads
+      - EXTRACTION_DIR=/data/extractions
     volumes:
       - .:/usr/src/app
-      - /usr/src/app/node_modules  # Prevent host node_modules from overriding container's
+      - /usr/src/app/node_modules
       - data-uploads:/data/uploads
       - data-extractions:/data/extractions
     depends_on:
