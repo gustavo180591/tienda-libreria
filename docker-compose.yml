@@ -1,6 +1,13 @@
 version: '3.8'
 
+# Configuración de redes personalizadas
+networks:
+  app-network:
+    driver: bridge
+    name: tienda-libreria-network
+
 services:
+  # Base de datos PostgreSQL
   db:
     image: postgres:16-alpine
     container_name: tienda-libreria-db
@@ -11,15 +18,57 @@ services:
     ports:
       - "5433:5432"   # Puerto mapeado para acceso desde el host
     volumes:
-      - db-data:/var/lib/postgresql/data
+      - postgres_data:/var/lib/postgresql/data
+      - ./docker/postgres/init.sql:/docker-entrypoint-initdb.d/init.sql
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U postgres -d tienda-libreria"]
       interval: 5s
       timeout: 3s
       retries: 10
+      start_period: 10s
+    networks:
+      - app-network
+    restart: unless-stopped
 
+  # Redis para sesiones y colas
+  redis:
+    image: redis:7-alpine
+    container_name: tienda-libreria-redis
+    command: redis-server --requirepass your-redis-password --appendonly yes
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "-a", "your-redis-password", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 5
+    networks:
+      - app-network
+    restart: unless-stopped
+
+  # Interfaz web para PostgreSQL
+  adminer:
+    image: adminer:latest
+    container_name: tienda-libreria-adminer
+    restart: always
+    ports:
+      - "8080:8080"
+    environment:
+      ADMINER_DEFAULT_SERVER: db
+    depends_on:
+      - db
+    networks:
+      - app-network
+
+  # Aplicación principal
   app:
-    build: .
+    build:
+      context: .
+      target: development
+      args:
+        NODE_ENV: development
     container_name: tienda-libreria-app
     command: ["npm", "run", "dev", "--", "--host", "0.0.0.0"]
     ports:
@@ -27,29 +76,41 @@ services:
     environment:
       - NODE_ENV=development
       - DATABASE_URL=postgresql://postgres:postgres@db:5432/tienda-libreria
-      - SHADOW_DATABASE_URL=postgresql://postgres:postgres@db:5432/tienda-libreria_shadow
-      - UPLOAD_DIR=/data/uploads
-      - EXTRACTION_DIR=/data/extractions
-      - MAX_UPLOAD_MB=20
+      - REDIS_URL=redis://:your-redis-password@redis:6379
+      - SESSION_SECRET=your-secret-key-change-this
+      - NODE_OPTIONS=--max-old-space-size=2048
     volumes:
       - .:/usr/src/app
       - /usr/src/app/node_modules
-      - data-uploads:/data/uploads
-      - data-extractions:/data/extractions
+      - /usr/src/app/.svelte-kit
     depends_on:
       db:
         condition: service_healthy
+      redis:
+        condition: service_healthy
+    networks:
+      - app-network
     restart: unless-stopped
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
 
+  # Worker para tareas en segundo plano (opcional)
   worker:
-    build: .
+    build:
+      context: .
+      target: development
     container_name: tienda-libreria-worker
     command: ["npm", "run", "worker:dev"]
     environment:
       - NODE_ENV=development
       - DATABASE_URL=postgresql://postgres:postgres@db:5432/tienda-libreria
+      - REDIS_URL=redis://:your-redis-password@redis:6379
       - UPLOAD_DIR=/data/uploads
       - EXTRACTION_DIR=/data/extractions
+      - NODE_OPTIONS=--max-old-space-size=1536
     volumes:
       - .:/usr/src/app
       - /usr/src/app/node_modules
@@ -58,9 +119,24 @@ services:
     depends_on:
       db:
         condition: service_healthy
+      redis:
+        condition: service_healthy
+    networks:
+      - app-network
     restart: unless-stopped
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
 
+# Volúmenes para persistencia de datos
 volumes:
-  db-data:
+  postgres_data:
+    name: tienda-libreria-postgres-data
+  redis_data:
+    name: tienda-libreria-redis-data
   data-uploads:
+    name: tienda-libreria-uploads
   data-extractions:
+    name: tienda-libreria-extractions

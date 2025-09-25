@@ -1,0 +1,301 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+  output   = "../node_modules/.prisma/client"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+  shadowDatabaseUrl = env("SHADOW_DATABASE_URL")
+}
+
+// Modelo de Usuario
+model Usuario {
+  id              String    @id @default(uuid())
+  email           String    @unique
+  nombre          String
+  apellido        String?
+  password        String
+  direccion       String?
+  telefono        String?
+  rol             Rol       @default(USUARIO)
+  activo          Boolean   @default(true)
+  fechaCreacion   DateTime  @default(now())
+  fechaActualizacion DateTime @updatedAt
+  pedidos         Pedido[]
+  direccionesEnvio DireccionEnvio[]
+  carrito         Carrito?
+  
+  @@map("usuarios")
+}
+
+// Modelo de Dirección de Envío
+model DireccionEnvio {
+  id             String   @id @default(uuid())
+  calle          String
+  ciudad         String
+  provincia      String
+  codigoPostal   String
+  pais           String   @default("Argentina")
+  esPrincipal    Boolean  @default(false)
+  usuarioId      String
+  usuario        Usuario  @relation(fields: [usuarioId], references: [id], onDelete: Cascade)
+  pedidos        Pedido[]
+  
+  @@map("direcciones_envio")
+}
+
+// Modelo de Marca
+model Marca {
+  id              String     @id @default(uuid())
+  nombre          String     @unique
+  descripcion     String?
+  logoUrl         String?
+  productos       Producto[]
+  activa          Boolean    @default(true)
+  fechaCreacion   DateTime   @default(now())
+  fechaActualizacion DateTime @updatedAt
+  
+  @@map("marcas")
+}
+
+// Modelo de Categoría
+model Categoria {
+  id              String     @id @default(uuid())
+  nombre          String     @unique
+  descripcion     String?
+  imagenUrl       String?
+  categoriaPadreId String?
+  categoriaPadre  Categoria? @relation("CategoriaHija", fields: [categoriaPadreId], references: [id], onDelete: SetNull)
+  categoriasHijas Categoria[] @relation("CategoriaHija")
+  productos       ProductoCategoria[]
+  activa          Boolean    @default(true)
+  fechaCreacion   DateTime   @default(now())
+  fechaActualizacion DateTime @updatedAt
+  
+  @@map("categorias")
+}
+
+// Modelo de Producto
+model Producto {
+  id              String     @id @default(uuid())
+  nombre          String
+  descripcion     String
+  descripcionLarga String?
+  precio          Float
+  precioOferta    Float?
+  sku             String     @unique
+  marcaId         String
+  marca           Marca      @relation(fields: [marcaId], references: [id])
+  categorias      ProductoCategoria[]
+  variantes       Variante[]
+  itemsCarrito    ItemCarrito[]
+  itemsPedido     ItemPedido[]
+  imagenes        ImagenProducto[]
+  calificacionPromedio Float? @default(0)
+  totalVendidos   Int        @default(0)
+  stockTotal       Int       @default(0)
+  esDestacado     Boolean    @default(false)
+  esNovedad       Boolean    @default(true)
+  activo          Boolean    @default(true)
+  fechaCreacion   DateTime   @default(now())
+  fechaActualizacion DateTime @updatedAt
+  
+  @@map("productos")
+}
+
+// Modelo de relación muchos a muchos entre Producto y Categoría
+model ProductoCategoria {
+  productoId      String
+  categoriaId     String
+  producto        Producto   @relation(fields: [productoId], references: [id], onDelete: Cascade)
+  categoria       Categoria  @relation(fields: [categoriaId], references: [id], onDelete: Cascade)
+  
+  @@id([productoId, categoriaId])
+  @@map("producto_categorias")
+}
+
+// Modelo de Variante de Producto
+model Variante {
+  id              String     @id @default(uuid())
+  productoId      String
+  producto        Producto   @relation(fields: [productoId], references: [id], onDelete: Cascade)
+  nombre          String     // Ej: "Color", "Tamaño"
+  valor           String     // Ej: "Rojo", "XL"
+  sku             String     @unique
+  precioAdicional Float      @default(0)
+  stock           Int        @default(0)
+  activa          Boolean    @default(true)
+  itemsCarrito    ItemCarrito[]
+  itemsPedido     ItemPedido[]
+  fechaCreacion   DateTime   @default(now())
+  fechaActualizacion DateTime @updatedAt
+  
+  @@map("variantes")
+}
+
+// Modelo de Imagen de Producto
+model ImagenProducto {
+  id              String     @id @default(uuid())
+  productoId      String
+  producto        Producto   @relation(fields: [productoId], references: [id], onDelete: Cascade)
+  url             String
+  esPrincipal     Boolean    @default(false)
+  orden           Int        @default(0)
+  fechaCreacion   DateTime   @default(now())
+  
+  @@map("imagenes_producto")
+}
+
+// Modelo de Carrito de Compras
+model Carrito {
+  id              String     @id @default(uuid())
+  usuarioId       String     @unique
+  usuario         Usuario    @relation(fields: [usuarioId], references: [id], onDelete: Cascade)
+  items           ItemCarrito[]
+  fechaCreacion   DateTime   @default(now())
+  fechaActualizacion DateTime @updatedAt
+  
+  @@map("carritos")
+}
+
+// Modelo de Ítem del Carrito
+model ItemCarrito {
+  id              String     @id @default(uuid())
+  carritoId       String
+  carrito         Carrito    @relation(fields: [carritoId], references: [id], onDelete: Cascade)
+  productoId      String
+  producto        Producto   @relation(fields: [productoId], references: [id])
+  varianteId      String?
+  variante        Variante?  @relation(fields: [varianteId], references: [id])
+  cantidad        Int        @default(1)
+  precioUnitario  Float
+  fechaCreacion   DateTime   @default(now())
+  fechaActualizacion DateTime @updatedAt
+  
+  @@map("items_carrito")
+}
+
+// Modelo de Pedido
+model Pedido {
+  id              String     @id @default(uuid())
+  codigo          String     @unique
+  usuarioId       String
+  usuario         Usuario    @relation(fields: [usuarioId], references: [id])
+  direccionEnvioId String
+  direccionEnvio  DireccionEnvio @relation(fields: [direccionEnvioId], references: [id])
+  items           ItemPedido[]
+  estado          EstadoPedido @default(PENDIENTE)
+  subtotal        Float
+  envio           Float
+  impuestos       Float
+  total           Float
+  metodoPago      MetodoPago
+  pago            Pago?
+  envioDetalle    Envio?
+  notas           String?
+  fechaCreacion   DateTime   @default(now())
+  fechaActualizacion DateTime @updatedAt
+  
+  @@map("pedidos")
+}
+
+// Modelo de Ítem de Pedido
+model ItemPedido {
+  id              String     @id @default(uuid())
+  pedidoId        String
+  pedido          Pedido     @relation(fields: [pedidoId], references: [id], onDelete: Cascade)
+  productoId      String
+  producto        Producto   @relation(fields: [productoId], references: [id])
+  varianteId      String?
+  variante        Variante?  @relation(fields: [varianteId], references: [id])
+  cantidad        Int
+  precioUnitario  Float
+  nombreProducto  String
+  varianteNombre  String?
+  
+  @@map("items_pedido")
+}
+
+// Modelo de Pago
+model Pago {
+  id              String     @id @default(uuid())
+  pedidoId        String     @unique
+  pedido          Pedido     @relation(fields: [pedidoId], references: [id])
+  monto           Float
+  metodoPago      MetodoPago
+  estado          EstadoPago @default(PENDIENTE)
+  referencia      String?    // ID de referencia del pago en la pasarela
+  datosPago       Json?      // Datos adicionales del pago
+  fechaCreacion   DateTime   @default(now())
+  fechaActualizacion DateTime @updatedAt
+  fechaAprobacion DateTime?
+  
+  @@map("pagos")
+}
+
+// Modelo de Envío
+model Envio {
+  id              String     @id @default(uuid())
+  pedidoId        String     @unique
+  pedido          Pedido     @relation(fields: [pedidoId], references: [id])
+  direccion       Json       // Datos de la dirección en el momento del envío
+  metodoEnvio     String
+  costo           Float
+  estado          EstadoEnvio @default(PENDIENTE)
+  codigoSeguimiento String?
+  transportista   String?
+  fechaEnvio      DateTime?
+  fechaEntrega    DateTime?
+  fechaCreacion   DateTime   @default(now())
+  fechaActualizacion DateTime @updatedAt
+  
+  @@map("envios")
+}
+
+// Enums
+enum Rol {
+  ADMIN
+  USUARIO
+  REPARTIDOR
+}
+
+enum EstadoPedido {
+  PENDIENTE
+  PAGO_PENDIENTE
+  PAGO_APROBADO
+  EN_PREPARACION
+  EN_CAMINO
+  ENTREGADO
+  CANCELADO
+  RECHAZADO
+  DEVUELTO
+}
+
+enum EstadoPago {
+  PENDIENTE
+  APROBADO
+  RECHAZADO
+  REEMBOLSADO
+  ERROR
+}
+
+enum EstadoEnvio {
+  PENDIENTE
+  EN_PROCESO
+  EN_TRANSITO
+  ENTREGADO
+  DEVUELTO
+  CANCELADO
+}
+
+enum MetodoPago {
+  MERCADO_PAGO
+  TRANSFERENCIA_BANCARIA
+  EFECTIVO
+  TARJETA_CREDITO
+  TARJETA_DEBITO
+}
