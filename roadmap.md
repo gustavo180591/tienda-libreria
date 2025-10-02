@@ -1,35 +1,108 @@
-# Roadmap — Tienda de Librería (basado en cliente.md)
+# roadmap — Tienda de Librería (basado en cliente.md)
 > Versión 2.2 — Fecha: 2025-10-01 — Actualizado por: Gustavo (Analista Programador)
 
-## 1) Roadmap 30/60/90 días
+## 1) roadmap - Tienda Librería
 
-### Semana 1-2: Infraestructura y Autenticación 🏗️
-- [x] Configuración inicial del proyecto y base de datos ✅
-- [ ] **Autenticación y Autorización**:
+## Stack Tecnológico
+
+### Entorno de Ejecución
+- Node.js v22.20.0 (LTS)
+- npm 10.x
+
+### Frontend
+- Svelte 5.0.0
+- SvelteKit 2.23.0
+- TypeScript 5.5.4
+- Vite 6.2.0
+- Tailwind CSS 4.0.0
+  - @tailwindcss/typography
+  - @tailwindcss/forms
+
+### Backend
+- Prisma 5.14.0
+- JSON Web Tokens (JWT)
+- BcryptJS 2.4.3
+- Zod 3.22.0 (validación)
+
+### Base de Datos
+- PostgreSQL 16+
+- Prisma ORM 5.14.0
+
+### Herramientas de Desarrollo
+- ESLint 9.18.0
+- Prettier 3.4.2
+- TypeScript ESLint
+- Prettier Plugins
+
+---
+
+## roadmap Detallado
+
+### Semana 1-2: Infraestructura y Autenticación 
+
+#### Configuración Inicial (Completado) 
+- [x] Configuración de Node.js v22.20.0
+- [x] Estructura de proyecto SvelteKit 2.23.0
+- [x] Configuración de TypeScript 5.5.4
+- [x] Integración con Prisma 5.14.0
+- [x] Configuración de base de datos PostgreSQL
+
+#### Autenticación y Autorización
+- [ ] **Sistema de Autenticación JWT**
   - [ ] `POST /auth/register` - Registro de usuarios
+    - Validación con Zod 3.22.0
+    - Hash de contraseñas con BcryptJS 2.4.3
   - [ ] `POST /auth/login` - Login con JWT
+    - Generación de tokens JWT
+    - Manejo de sesiones seguras
   - [ ] Middleware de autenticación
+    - Verificación de tokens JWT
+    - Extracción de datos de usuario
   - [ ] Control de roles (Admin/Manager/Cliente)
+    - Middleware de autorización
+    - Protección de rutas por roles
 
-- [x] **API Base** ✅
-  - [x] Estructura de rutas modular
-  - [x] Manejo centralizado de errores
-  - [ ] Validación de datos con Zod
-  - [ ] Documentación OpenAPI
+#### API Base (Parcialmente Completado) 
+- [x] Estructura de rutas modular (SvelteKit)
+- [x] Manejo centralizado de errores
+- [ ] Validación de datos con Zod 3.22.0
+  - Esquemas para todas las entradas
+  - Mensajes de error personalizados
+- [ ] Documentación OpenAPI
+  - Generación automática con Swagger UI
+  - Documentación de endpoints
 
-### Semana 3-4: Catálogo de Productos 📦
-- [ ] **Productos**:
-  - [ ] `GET /products` - Lista paginada (filtros: q, page, pageSize, sort)
+### Semana 3-4: Catálogo de Productos 
+
+#### Gestión de Productos
+- [ ] **API de Productos**
+  - [ ] `GET /products` - Lista paginada
+    - Filtros: búsqueda, categoría, stock
+    - Ordenamiento personalizado
+    - Paginación con límite y offset
   - [ ] `POST /products` - Crear producto
-  - [ ] `GET /products/{id}` - Detalle con ?include=variants
+    - Validación con Zod
+    - Manejo de imágenes (almacenamiento local/S3)
+    - Creación de variantes
+  - [ ] `GET /products/{id}` - Detalle de producto
+    - Inclusión opcional de variantes
+    - Información de stock en tiempo real
   - [ ] `PATCH /products/{id}` - Actualizar producto
+    - Actualización parcial
+    - Validación de datos
   - [ ] `DELETE /products/{id}` - Eliminar producto
+    - Eliminación lógica (soft delete)
+    - Verificación de existencias en órdenes
 
-- [ ] **Variantes**:
-  - [ ] `GET /products/{id}/variants` - Listar variantes
-  - [ ] `POST /products/{id}/variants` - Crear variante
-  - [ ] `GET /variants` - Búsqueda global
-  - [ ] `PATCH /variants/{id}` - Actualizar variante
+#### Frontend de Productos
+- [ ] Listado de productos
+  - Vista de cuadrícula/lista
+  - Filtros y ordenamiento
+  - Paginación
+- [ ] Formulario de producto
+  - Validación en tiempo real
+  - Subida de imágenes
+  - Gestión de variantes
   - [ ] `DELETE /variants/{id}` - Eliminar variante
 
 ### Semana 5-6: Carrito y Checkout 🛒

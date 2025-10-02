@@ -1,5 +1,21 @@
 import { prisma } from '$lib/server/db';
-import { stockService } from './stock.service';
+import type { Prisma, Product, ProductVariant, Category } from '@prisma/client';
+
+type ProductWithVariants = Product & {
+  variants: ProductVariant[];
+  category: Category | null;
+  inStock: boolean;
+};
+
+type ProductListResult = {
+  data: ProductWithVariants[];
+  pagination: {
+    total: number;
+    page: number;
+    limit: number;
+    totalPages: number;
+  };
+};
 
 export class ProductService {
   /**
@@ -15,10 +31,10 @@ export class ProductService {
     limit?: number;
     categoryId?: string;
     search?: string;
-  } = {}) {
+  } = {}): Promise<ProductListResult> {
     const skip = (page - 1) * limit;
     
-    const where: any = { isActive: true };
+    const where: Prisma.ProductWhereInput = { isActive: true };
     
     if (categoryId) {
       where.categoryId = categoryId;
@@ -41,36 +57,22 @@ export class ProductService {
           category: true,
           variants: {
             where: { isActive: true },
-            include: {
-              stock: true,
-            },
           },
         },
         orderBy: { createdAt: 'desc' },
       }),
     ]);
 
-    // Get available stock for each variant
-    const productsWithStock = await Promise.all(
-      products.map(async (product) => {
-        const variants = await Promise.all(
-          product.variants.map(async (variant) => {
-            const availableStock = await stockService.getAvailableStock(variant.id);
-            return {
-              ...variant,
-              availableStock,
-              inStock: availableStock > 0,
-            };
-          })
-        );
-
-        return {
-          ...product,
-          variants,
-          inStock: variants.some((v) => v.inStock),
-        };
-      })
-    );
+    // Calculate available stock for each product
+    const productsWithStock = products.map(product => ({
+      ...product,
+      variants: product.variants.map(variant => ({
+        ...variant,
+        availableStock: variant.stock,
+        inStock: variant.stock > 0,
+      })),
+      inStock: product.variants.some(v => v.stock > 0),
+    })) as ProductWithVariants[];
 
     return {
       data: productsWithStock,
@@ -86,51 +88,57 @@ export class ProductService {
   /**
    * Get a single product by slug with available stock
    */
-  async getProductBySlug(slug: string) {
+  async getProductBySlug(slug: string): Promise<ProductWithVariants | null> {
     const product = await prisma.product.findUnique({
-      where: { slug, isActive: true },
+      where: { 
+        slug,
+        isActive: true 
+      },
       include: {
         category: true,
         variants: {
           where: { isActive: true },
-          include: {
-            stock: true,
-          },
         },
       },
     });
 
     if (!product) return null;
 
-    // Get available stock for each variant
-    const variants = await Promise.all(
-      product.variants.map(async (variant) => {
-        const availableStock = await stockService.getAvailableStock(variant.id);
-        return {
-          ...variant,
-          availableStock,
-          inStock: availableStock > 0,
-        };
-      })
-    );
+    // Calculate available stock for each variant
+    const variants = product.variants.map(variant => ({
+      ...variant,
+      availableStock: variant.stock,
+      inStock: variant.stock > 0,
+    }));
 
     return {
       ...product,
       variants,
-      inStock: variants.some((v) => v.inStock),
-    };
+      inStock: variants.some(v => v.inStock),
+    } as ProductWithVariants;
   }
 
   /**
    * Get products by category slug
    */
-  async getProductsByCategory(slug: string, page = 1, limit = 10) {
+  async getProductsByCategory(slug: string, page = 1, limit = 10): Promise<ProductListResult> {
     const category = await prisma.category.findUnique({
-      where: { slug, isActive: true },
+      where: { 
+        slug, 
+        isActive: true 
+      },
     });
 
     if (!category) {
-      return { data: [], pagination: { total: 0, page, limit, totalPages: 0 } };
+      return { 
+        data: [], 
+        pagination: { 
+          total: 0, 
+          page, 
+          limit, 
+          totalPages: 0 
+        } 
+      };
     }
 
     return this.getProducts({
@@ -143,7 +151,7 @@ export class ProductService {
   /**
    * Search products by query
    */
-  async searchProducts(query: string, page = 1, limit = 10) {
+  async searchProducts(query: string, page = 1, limit = 10): Promise<ProductListResult> {
     return this.getProducts({
       page,
       limit,
@@ -154,7 +162,7 @@ export class ProductService {
   /**
    * Get featured products
    */
-  async getFeaturedProducts(limit = 8) {
+  async getFeaturedProducts(limit = 8): Promise<ProductWithVariants[]> {
     const products = await prisma.product.findMany({
       where: { 
         isActive: true,
@@ -162,48 +170,60 @@ export class ProductService {
       },
       take: limit,
       include: {
+        category: true,
         variants: {
           where: { isActive: true },
-          include: {
-            stock: true,
-          },
         },
       },
       orderBy: { updatedAt: 'desc' },
     });
 
-    // Get available stock for each variant
-    const productsWithStock = await Promise.all(
-      products.map(async (product) => {
-        const variants = await Promise.all(
-          product.variants.map(async (variant) => {
-            const availableStock = await stockService.getAvailableStock(variant.id);
-            return {
-              ...variant,
-              availableStock,
-              inStock: availableStock > 0,
-            };
-          })
-        );
-
-        return {
-          ...product,
-          variants,
-          inStock: variants.some((v) => v.inStock),
-        };
-      })
-    );
+    // Calculate available stock for each product
+    const productsWithStock = products.map(product => ({
+      ...product,
+      variants: product.variants.map(variant => ({
+        ...variant,
+        availableStock: variant.stock,
+        inStock: variant.stock > 0,
+      })),
+      inStock: product.variants.some(v => v.stock > 0),
+    })) as ProductWithVariants[];
 
     return productsWithStock;
   }
 
   /**
-   * Get all categories
+   * Get all active categories with product count
    */
   async getCategories() {
     return await prisma.category.findMany({
       where: { isActive: true },
+      include: {
+        _count: {
+          select: { 
+            products: { 
+              where: { isActive: true } 
+            } 
+          },
+        },
+      },
       orderBy: { name: 'asc' },
+    });
+  }
+  
+  /**
+   * Get a single variant by ID with product info
+   */
+  async getVariantById(variantId: string) {
+    return await prisma.productVariant.findUnique({
+      where: { id: variantId, isActive: true },
+      include: {
+        product: {
+          include: {
+            category: true,
+          },
+        },
+      },
     });
   }
 }

@@ -24,58 +24,127 @@ enum Currency {
   USD
 }
 
-// ================================ MODELS =====================================
-model User {
-  id           String   @id @default(cuid())
-  email        String   @unique
-  passwordHash String
-  role         Role     @default(CUSTOMER)
-  orders       Order[]
-  createdAt    DateTime @default(now())
-  updatedAt    DateTime @updatedAt
+enum OrderStatus {
+  PENDING
+  PROCESSING
+  COMPLETED
+  CANCELLED
 }
 
-model Product {
-  id          String    @id @default(cuid())
-  name        String
-  description String?
-  variants    ProductVariant[]
+// ================================ MODELS =====================================
+model User {
+  id           String    @id @default(cuid())
+  email        String    @unique
+  passwordHash String
+  firstName    String?
+  lastName     String?
+  role         Role      @default(CUSTOMER)
+  orders       Order[]
+  addresses   Address[]
+  cart        CartItem[]
   createdAt   DateTime  @default(now())
   updatedAt   DateTime  @updatedAt
 }
 
+model Category {
+  id          String    @id @default(cuid())
+  name        String
+  slug        String    @unique
+  description String?
+  isActive    Boolean   @default(true)
+  products    Product[]
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+}
+
+model Product {
+  id          String          @id @default(cuid())
+  name        String
+  slug        String          @unique
+  description String?
+  price       Float
+  currency    Currency        @default(ARS)
+  stock       Int             @default(0)
+  isActive    Boolean         @default(true)
+  featured    Boolean         @default(false)
+  images      String[]
+  categoryId  String?
+  category    Category?       @relation(fields: [categoryId], references: [id])
+  variants    ProductVariant[]
+  orderItems  OrderItem[]
+  cartItems   CartItem[]
+  createdAt   DateTime        @default(now())
+  updatedAt   DateTime        @updatedAt
+}
+
 model ProductVariant {
   id          String      @id @default(cuid())
-  productId   String
-  product     Product     @relation(fields: [productId], references: [id])
+  name        String
   sku         String      @unique
-  price       Float       @default(0)
+  price       Float
   currency    Currency    @default(ARS)
   stock       Int         @default(0)
+  isActive    Boolean     @default(true)
+  productId   String
+  product     Product     @relation(fields: [productId], references: [id])
   orderItems  OrderItem[]
+  cartItems   CartItem[]
   createdAt   DateTime    @default(now())
   updatedAt   DateTime    @updatedAt
 }
 
 model Order {
   id          String      @id @default(cuid())
+  orderNumber String      @unique @default(uuid())
   userId      String
   user        User        @relation(fields: [userId], references: [id])
   items       OrderItem[]
   total       Float       @default(0)
-  status      String      @default("PENDING")
+  status      OrderStatus @default(PENDING)
+  paymentId   String?
+  shippingAddress String?
+  notes       String?
   createdAt   DateTime    @default(now())
   updatedAt   DateTime    @updatedAt
 }
 
 model OrderItem {
-  id        String    @id @default(cuid())
-  orderId   String
-  order     Order     @relation(fields: [orderId], references: [id])
-  variantId String
-  variant   ProductVariant @relation(fields: [variantId], references: [id])
-  quantity  Int       @default(1)
-  price     Float
-  createdAt DateTime  @default(now())
-  updatedAt DateTime  @updatedAt
+  id          String        @id @default(cuid())
+  orderId     String
+  order       Order         @relation(fields: [orderId], references: [id])
+  productId   String
+  product     Product       @relation(fields: [productId], references: [id])
+  variantId   String?
+  variant     ProductVariant? @relation(fields: [variantId], references: [id])
+  quantity    Int           @default(1)
+  price       Float
+  createdAt   DateTime      @default(now())
+  updatedAt   DateTime      @updatedAt
+}
+
+model CartItem {
+  id          String        @id @default(cuid())
+  userId      String
+  user        User          @relation(fields: [userId], references: [id])
+  productId   String
+  product     Product       @relation(fields: [productId], references: [id])
+  variantId   String?
+  variant     ProductVariant? @relation(fields: [variantId], references: [id])
+  quantity    Int           @default(1)
+  createdAt   DateTime      @default(now())
+  updatedAt   DateTime      @updatedAt
+}
+
+model Address {
+  id          String    @id @default(cuid())
+  userId      String
+  user        User      @relation(fields: [userId], references: [id])
+  street      String
+  city        String
+  state       String
+  postalCode  String
+  country     String    @default("Argentina")
+  isDefault   Boolean   @default(false)
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
 }

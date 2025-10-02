@@ -1,20 +1,20 @@
-import { OrderStatus, type Prisma, type Order, type OrderItem, type PaymentStatus } from '@prisma/client';
+import { OrderStatus, type Order, type OrderItem } from '@prisma/client';
 import { prisma } from '$lib/server/db';
-import { stockService } from './stock.service';
-import { env } from '$env/dynamic/private';
 
 interface CreateOrderInput {
-  customerName: string;
-  customerEmail: string;
-  customerPhone?: string;
-  shippingMethod: 'delivery' | 'pickup';
-  shippingAddress?: string;
-  paymentMethod: string;
+  userId: string;
   items: Array<{
-    variantId: string;
+    productId: string;
+    variantId?: string;
     quantity: number;
     price: number;
   }>;
+  shippingAddress: string;
+  notes?: string;
+}
+
+export interface OrderWithItems extends Order {
+  items: OrderItem[];
 }
 
 export class OrderService {
@@ -22,7 +22,7 @@ export class OrderService {
    * Create a new order with stock reservation
    */
   async createOrder(data: CreateOrderInput): Promise<{
-    order: Order & { items: OrderItem[] };
+    order: OrderWithItems;
     requiresPayment: boolean;
   }> {
     return await prisma.$transaction(async (tx) => {
@@ -30,145 +30,55 @@ export class OrderService {
       const orderNumber = await this.generateOrderNumber();
       
       // 2. Calculate total amount
-      const totalAmount = data.items.reduce((sum, item) => 
+      const total = data.items.reduce((sum, item) => 
         sum + (item.quantity * Number(item.price)), 0);
 
       // 3. Create order
       const order = await tx.order.create({
         data: {
           orderNumber,
-          customerName: data.customerName,
-          customerEmail: data.customerEmail,
-          customerPhone: data.customerPhone,
+          userId: data.userId,
           status: OrderStatus.PENDING,
-          totalAmount,
-          paymentMethod: data.paymentMethod,
-          shippingMethod: data.shippingMethod,
+          total,
           shippingAddress: data.shippingAddress,
+          notes: data.notes,
           items: {
             create: data.items.map(item => ({
+              productId: item.productId,
               variantId: item.variantId,
               quantity: item.quantity,
               price: item.price,
             })),
           },
         },
-        include: { items: true },
+        include: { 
+          items: {
+            include: {
+              product: true,
+              variant: true,
+            },
+          },
+        },
       });
 
-      // 4. Reserve stock for each item
+      // 4. Update stock for each variant
       for (const item of data.items) {
-        const reserved = await stockService.reserveStock(
-          item.variantId,
-          order.id,
-          item.quantity
-        );
-        
-        if (!reserved) {
-          throw new Error(`Insufficient stock for variant ${item.variantId}`);
+        if (item.variantId) {
+          await tx.productVariant.update({
+            where: { id: item.variantId },
+            data: { 
+              stock: { 
+                decrement: item.quantity 
+              },
+            },
+          });
         }
       }
-
-      // 5. If it's a cash on delivery order, mark as processing
-      // Otherwise, it will be updated when payment is received
-      const requiresPayment = data.paymentMethod !== 'cash_on_delivery';
       
-      return { order, requiresPayment };
-    });
-  }
-
-  /**
-   * Confirm payment and update order status
-   */
-  async confirmPayment(
-    orderId: string,
-    paymentData: {
-      transactionId: string;
-      amount: number;
-      paymentMethod: string;
-      details?: any;
-    }
-  ): Promise<{ success: boolean; order: Order | null }> {
-    return await prisma.$transaction(async (tx) => {
-      // 1. Find the order
-      const order = await tx.order.findUnique({
-        where: { id: orderId },
-        include: { items: true },
-      });
-
-      if (!order) {
-        return { success: false, order: null };
-      }
-
-      // 2. Update stock for each item
-      for (const item of order.items) {
-        const success = await stockService.confirmStockDeduction(
-          item.variantId,
-          item.quantity,
-          order.id
-        );
-        
-        if (!success) {
-          throw new Error(`Failed to update stock for variant ${item.variantId}`);
-        }
-      }
-
-      // 3. Create payment record
-      await tx.payment.create({
-        data: {
-          orderId: order.id,
-          amount: paymentData.amount,
-          paymentMethod: paymentData.paymentMethod,
-          status: 'COMPLETED',
-          transactionId: paymentData.transactionId,
-          paymentDetails: paymentData.details || {},
-          processedAt: new Date(),
-        },
-      });
-
-      // 4. Update order status
-      const updatedOrder = await tx.order.update({
-        where: { id: orderId },
-        data: { 
-          status: OrderStatus.PROCESSING,
-          updatedAt: new Date(),
-        },
-      });
-
-      return { success: true, order: updatedOrder };
-    });
-  }
-
-  /**
-   * Cancel an order and release reserved stock
-   */
-  async cancelOrder(orderId: string): Promise<boolean> {
-    return await prisma.$transaction(async (tx) => {
-      // 1. Find the order with items
-      const order = await tx.order.findUnique({
-        where: { id: orderId },
-        include: { items: true },
-      });
-
-      if (!order || order.status === 'CANCELLED') {
-        return false;
-      }
-
-      // 2. Release reserved stock for each item
-      for (const item of order.items) {
-        await stockService.releaseStock(item.variantId, orderId);
-      }
-
-      // 3. Update order status to cancelled
-      await tx.order.update({
-        where: { id: orderId },
-        data: { 
-          status: 'CANCELLED',
-          updatedAt: new Date(),
-        },
-      });
-
-      return true;
+      return { 
+        order, 
+        requiresPayment: true // For now, all orders require payment
+      };
     });
   }
 
@@ -176,67 +86,116 @@ export class OrderService {
    * Generate a unique order number
    */
   private async generateOrderNumber(): Promise<string> {
-    const prefix = 'ORD';
+    const count = await prisma.order.count();
     const date = new Date();
-    const dateStr = date.getFullYear().toString().slice(-2) +
-      (date.getMonth() + 1).toString().padStart(2, '0') +
-      date.getDate().toString().padStart(2, '0');
+    const year = date.getFullYear().toString().slice(-2);
+    const month = (date.getMonth() + 1).toString().padStart(2, '0');
+    const day = date.getDate().toString().padStart(2, '0');
+    const sequence = (count + 1).toString().padStart(4, '0');
     
-    // Get the count of orders today
-    const today = new Date();
-    today.setHours(0, 0, 0, 0);
-    
-    const count = await prisma.order.count({
-      where: {
-        createdAt: {
-          gte: today,
-        },
-      },
-    });
-
-    const orderNumber = `${prefix}${dateStr}${(count + 1).toString().padStart(4, '0')}`;
-    return orderNumber;
+    return `ORD-${year}${month}${day}-${sequence}`;
   }
 
   /**
-   * Get order details by ID
+   * Get order by ID
    */
-  async getOrderById(orderId: string) {
+  async getOrderById(id: string): Promise<OrderWithItems | null> {
     return await prisma.order.findUnique({
-      where: { id: orderId },
+      where: { id },
       include: {
-        items: {
-          include: {
-            variant: {
-              include: {
-                product: true,
-              },
-            },
+        user: {
+          select: {
+            id: true,
+            email: true,
+            firstName: true,
+            lastName: true,
           },
         },
-        payments: true,
+        items: {
+          include: {
+            product: true,
+            variant: true,
+          },
+        },
       },
     });
   }
 
   /**
-   * Get orders by customer email
+   * Get orders by user ID
    */
-  async getOrdersByEmail(email: string) {
+  async getOrdersByUserId(userId: string): Promise<OrderWithItems[]> {
     return await prisma.order.findMany({
-      where: { customerEmail: email },
-      orderBy: { createdAt: 'desc' },
+      where: { userId },
       include: {
         items: {
           include: {
-            variant: {
-              include: {
-                product: true,
-              },
-            },
+            product: true,
+            variant: true,
           },
         },
       },
+      orderBy: { createdAt: 'desc' },
+    });
+  }
+
+  /**
+   * Update order status
+   */
+  async updateOrderStatus(orderId: string, status: OrderStatus): Promise<Order> {
+    return await prisma.order.update({
+      where: { id: orderId },
+      data: { status },
+    });
+  }
+
+  /**
+   * Cancel an order and restore stock
+   */
+  async cancelOrder(orderId: string): Promise<Order> {
+    return await prisma.$transaction(async (tx) => {
+      // 1. Get the order with items
+      const order = await tx.order.findUnique({
+        where: { id: orderId },
+        include: { 
+          items: {
+            include: {
+              variant: true,
+            },
+          },
+        },
+      });
+
+      if (!order) {
+        throw new Error('Order not found');
+      }
+
+      if (order.status === OrderStatus.CANCELLED) {
+        return order; // Already cancelled
+      }
+
+      // 2. Restore stock for each item with a variant
+      for (const item of order.items) {
+        if (item.variantId) {
+          await tx.productVariant.update({
+            where: { id: item.variantId },
+            data: { 
+              stock: { 
+                increment: item.quantity 
+              },
+            },
+          });
+        }
+      }
+
+      // 3. Update order status to cancelled
+      return await tx.order.update({
+        where: { id: orderId },
+        data: { 
+          status: OrderStatus.CANCELLED,
+          updatedAt: new Date(),
+        },
+      });
     });
   }
 }
