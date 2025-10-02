@@ -3,31 +3,33 @@ version: '3.8'
 services:
   db:
     image: postgres:16-alpine
-    container_name: tienda-libreria-db
+    container_name: tienda_libreria_db
     environment:
       POSTGRES_USER: postgres
       POSTGRES_PASSWORD: postgres
-      POSTGRES_DB: tienda-libreria
+      POSTGRES_DB: tienda_libreria
     ports:
       - "5433:5432"   # Puerto mapeado para acceso desde el host
     volumes:
       - db-data:/var/lib/postgresql/data
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U postgres -d tienda-libreria"]
+      test: ["CMD-SHELL", "pg_isready -U postgres -d tienda_libreria"]
       interval: 5s
       timeout: 3s
       retries: 10
 
   app:
     build: .
-    container_name: tienda-libreria-app
+    container_name: tienda_libreria-app
     command: ["npm", "run", "dev", "--", "--host", "0.0.0.0"]
     ports:
       - "5173:5173"
+    env_file:
+      - .env
     environment:
       - NODE_ENV=development
-      - DATABASE_URL=postgresql://postgres:postgres@db:5432/tienda-libreria
-      - SHADOW_DATABASE_URL=postgresql://postgres:postgres@db:5432/tienda-libreria_shadow
+      - DATABASE_URL=postgresql://postgres:postgres@db:5432/tienda_libreria
+      - SHADOW_DATABASE_URL=postgresql://postgres:postgres@db:5432/tienda_libreria_shadow
       - UPLOAD_DIR=/data/uploads
       - EXTRACTION_DIR=/data/extractions
       - MAX_UPLOAD_MB=20
@@ -43,11 +45,13 @@ services:
 
   worker:
     build: .
-    container_name: tienda-libreria-worker
+    container_name: tienda_libreria-worker
     command: ["npm", "run", "worker:dev"]
+    env_file:
+      - .env
     environment:
       - NODE_ENV=development
-      - DATABASE_URL=postgresql://postgres:postgres@db:5432/tienda-libreria
+      - DATABASE_URL=postgresql://postgres:postgres@db:5432/tienda_libreria
       - UPLOAD_DIR=/data/uploads
       - EXTRACTION_DIR=/data/extractions
     volumes:
