@@ -1,52 +1,121 @@
-Stack Tecnológico – Versiones Recomendadas [81%]
+# Stack Tecnológico - Librería Arco Iris
 
-Este documento define las versiones objetivo del proyecto y los comandos para instalar/actualizar cada pieza.
+Este documento detalla la pila tecnológica actual del sistema de gestión para Librería Arco Iris, incluyendo versiones y comandos de instalación.
 
-Convención: usamos rangos ^ para librerías (minor/patch automáticos) y tags estables para contenedores. Para upgrades mayores: rama dedicada + smoke tests.
+## Visión General
 
-## Entorno de Ejecución
+Sistema de gestión integral para Librería Arco Iris, una tienda online especializada en artículos de librería, libros y útiles escolares con control de stock en tiempo real.
 
-- [x] Node.js: v22 LTS
+## Entorno de Desarrollo
 
-# Recomendado: nvm
+- [x] **Node.js**: v22 LTS
+
+```bash
+# Instalar usando nvm (recomendado)
 nvm install --lts
 nvm use --lts
 node -v
+```
 
+- [x] **npm**: última estable
 
-- [x] npm: última estable
-
+```bash
 npm i -g npm@latest
 npm -v
+```
 
+## Frontend
 
-Alternativa: pnpm si el equipo prefiere workspaces más ágiles. Para mantener consistencia con el ejemplo, dejamos npm.
+- [x] **Svelte**: ^5.0.0
+- [x] **SvelteKit**: ^2.0.0
+- [x] **TypeScript**: ^5.6.0
+- [x] **Vite**: ^6.0.0
+- [x] **Tailwind CSS**: ^4.0.0
+  - @tailwindcss/typography
+  - @tailwindcss/forms
 
-## Frontend (Web)
+```bash
+# Instalar dependencias frontend
+npm install svelte@latest @sveltejs/kit@latest typescript@latest vite@latest
+npm install -D tailwindcss@latest @tailwindcss/typography@latest @tailwindcss/forms@latest
+```
 
-- [x] Svelte: ^5.0.0
+## Backend
 
-npm i svelte@latest
+- [x] **Node.js**: ^22.0.0
+- [x] **Express**: ^4.18.0
+- [x] **TypeScript**: ^5.6.0
+- [x] **Prisma**: ^6.0.0
+- [x] **JWT**: ^9.0.0 (para autenticación)
+- [x] **Bcrypt**: ^5.1.0 (para hashing de contraseñas)
 
+```bash
+# Instalar dependencias backend
+npm install @prisma/client express jsonwebtoken bcrypt
+npm install -D @types/express @types/jsonwebtoken @types/bcrypt
+```
 
-- [x] SvelteKit: ^2.23.0
+## Base de Datos
 
-npm i @sveltejs/kit@latest
+- [x] **PostgreSQL**: 16.0+
+- [x] **Prisma ORM**: ^6.0.0
+- [x] **Extensiones**:
+  - CITEXT (para búsquedas case-insensitive)
 
+```bash
+# Inicializar Prisma
+npx prisma generate
+npx prisma migrate dev
+```
 
-- [x] Vite: ^6.2.0
+## Infraestructura
 
-npm i -D vite@latest
+- [x] **Docker**: ^24.0.0
+- [x] **Docker Compose**: ^2.20.0
+- [x] **Redis**: ^7.0.0 (para caché y sesiones)
+- [x] **Nginx**: ^1.25.0 (como reverse proxy)
 
+## Herramientas de Desarrollo
 
-- [x] TypeScript: ^5.6.0
+- [x] **ESLint**: ^9.0.0
+- [x] **Prettier**: ^3.0.0
+- [x] **Husky**: ^9.0.0 (para git hooks)
+- [x] **Commitlint**: ^19.0.0 (para convención de commits)
 
-npm i -D typescript@latest
+```bash
+# Configurar pre-commit hooks
+npx husky install
+npx husky add .husky/pre-commit "npm run lint"
+```
 
+## Despliegue
 
-- [x] Tailwind CSS: ^4.0.0 (+ plugins oficiales)
+- **Entorno de Producción**: Docker + Docker Compose
+- **CI/CD**: GitHub Actions
+- **Monitoreo**: Prometheus + Grafana (opcional)
 
-npm i -D tailwindcss@latest @tailwindcss/typography@latest @tailwindcss/forms@latest
+## Requisitos del Sistema
+
+- **Sistema Operativo**: Linux/macOS/Windows (con WSL2)
+- **Docker**: 24.0+
+- **RAM Mínima**: 4GB (8GB recomendado)
+- **Espacio en Disco**: 2GB libres
+
+## Comandos Útiles
+
+```bash
+# Iniciar entorno de desarrollo
+docker-compose up -d
+
+# Ejecutar migraciones
+npx prisma migrate dev
+
+# Generar cliente de Prisma
+npx prisma generate
+
+# Iniciar servidor de desarrollo
+npm run dev
+```
 
 
 - [x] TanStack Query (Svelte Query): ^5.0.0

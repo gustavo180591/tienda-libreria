@@ -1,5 +1,23 @@
-# Etapa de construcción
-FROM --platform=linux/amd64 node:20-alpine@sha256:8b1bff8b7361fa4aecbca356353f7b402b4fd0a6ddaccb319d578297a9a8c59e AS builder
+# Etapa de desarrollo
+FROM node:20-alpine AS development
+
+WORKDIR /usr/src/app
+
+# Instalar dependencias de desarrollo
+COPY package.json package-lock.json* ./
+RUN npm ci --legacy-peer-deps
+
+# Copiar el resto de la aplicación
+COPY . .
+
+# Puerto expuesto para desarrollo
+EXPOSE 5173
+
+# Comando para desarrollo
+CMD ["npm", "run", "dev", "--", "--host", "0.0.0.0"]
+
+# Etapa de construcción para producción
+FROM node:20-alpine AS builder
 
 # Instalar dependencias de compilación necesarias
 RUN apk add --no-cache python3 make g++

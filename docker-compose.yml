@@ -1,4 +1,3 @@
-version: '3.8'
 
 # Configuración de redes personalizadas
 networks:

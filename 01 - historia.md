@@ -1,20 +1,48 @@
 # Sistema de Gestión para Librería Arco Iris
 
-## Descripción General
+## 1. Visión General
 
 Librería Arco Iris es una tienda online especializada en la venta de artículos de librería, libros y útiles escolares con control de stock en tiempo real. El sistema permite a los clientes realizar compras 24/7 con opciones de pago en línea, retiro en local y envíos por zona. Está diseñado para ofrecer una experiencia de compra fluida tanto a clientes finales como a instituciones educativas.
 
 **Ubicación:** Eva Perón 1234, Villa Cabello, Posadas - Misiones  
 **Contacto:** chabelalibreria@gmail.com | +54 9 376 123-4567
 
-## 2) Objetivos del Sistema
+## 2. Requisitos Técnicos
 
+### 2.1 Infraestructura
+- **Base de Datos:** PostgreSQL 14+ con Prisma ORM
+- **Backend:** Node.js con TypeScript
+- **Frontend:** Aplicación web responsive
+- **Almacenamiento:** Sistema de archivos en la nube para imágenes y documentos
+- **Seguridad:** HTTPS, JWT para autenticación, protección CSRF
+
+### 2.2 Rendimiento
+- Tiempo de respuesta de API < 500ms (p95)
+- Soporte para 1000 usuarios concurrentes
+- Tiempo de carga inicial < 2 segundos
+- Disponibilidad del 99.9% (tiempo de actividad)
+
+### 2.3 Compatibilidad
+- Navegadores soportados: Chrome, Firefox, Safari, Edge (últimas 2 versiones)
+- Dispositivos móviles: iOS 14+, Android 10+
+- Resoluciones mínimas: 320px (móvil), 768px (tablet), 1024px (escritorio)
+
+## 3. Objetivos del Sistema
+
+### 3.1 Objetivos Principales
 - Facilitar compras de útiles escolares 24/7 desde cualquier dispositivo
 - Garantizar la precisión del inventario con control de stock en tiempo real
 - Prevenir sobreventas mediante reserva de stock durante el proceso de pago
 - Simplificar la operación con un panel administrativo intuitivo
 - Ofrecer presupuestos personalizados a partir de listas de útiles escolares
 - Proporcionar múltiples opciones de pago y entrega
+
+### 3.2 Métricas de Éxito
+- Reducción del 30% en el tiempo de procesamiento de pedidos
+- Aumento del 25% en la tasa de conversión
+- Reducción del 40% en errores de inventario
+- Tiempo promedio de respuesta del sistema < 500ms
+- Satisfacción del cliente > 4.5/5 estrellas
 
 ## 3) Características Principales (MVP)
 
@@ -149,7 +177,47 @@ Librería Arco Iris es una tienda online especializada en la venta de artículos
 - Recordatorios de carrito abandonado
 - Ofertas y promociones personalizadas
 
-## 4) Reglas de Negocio
+## 4. Arquitectura del Sistema
+
+### 4.1 Diagrama de Arquitectura
+```
+[Cliente Web/Móvil] → [CDN] → [Balanceador de Carga]
+                                      │
+                                      ▼
+[API Gateway] ←→ [Servicio de Autenticación]
+      │
+      ├─→ [Servicio de Catálogo] ←→ [Base de Datos PostgreSQL]
+      ├─→ [Servicio de Carrito] ←→ [Redis Cache]
+      ├─→ [Servicio de Pedidos] ←→ [Base de Datos PostgreSQL]
+      ├─→ [Servicio de Pagos] ←→ [Mercado Pago API]
+      └─→ [Servicio de Notificaciones] → [Email/SMS/Push]
+```
+
+### 4.2 Patrones de Diseño
+- Arquitectura de microservicios
+- Patrón CQRS para consultas complejas
+- Event Sourcing para transacciones críticas
+- Circuit Breaker para llamadas a servicios externos
+- Repository Pattern para acceso a datos
+
+## 5. Modelo de Datos
+
+### 5.1 Entidades Principales
+- **Usuario**: Información de clientes y administradores
+- **Producto**: Catálogo de artículos con variantes
+- **Categoría**: Jerarquía de categorías de productos
+- **Pedido**: Transacciones de compra
+- **Institución**: Perfiles de instituciones educativas
+- **Lista de Útiles**: Plantillas de listas escolares
+
+### 5.2 Relaciones Clave
+- Un Usuario puede tener múltiples Pedidos
+- Un Producto puede tener múltiples Variantes
+- Una Categoría puede tener múltiples Subcategorías
+- Una Institución puede tener múltiples Usuarios
+- Una Lista de Útiles puede contener múltiples Productos
+
+## 6. Reglas de Negocio
 
 - **Gestión de Stock:**
   - Solo se permite la venta cuando `stock_disponible ≥ cantidad solicitada`
@@ -172,80 +240,165 @@ Librería Arco Iris es una tienda online especializada en la venta de artículos
   - Transacciones seguras con encriptación SSL
   - Copias de seguridad diarias de la base de datos
 
-## 5) Flujo de Compra (End-to-End)
+## 7. Flujos de Trabajo Principales
 
+### 7.1 Flujo de Compra (End-to-End)
 1. **Navegación y Selección:**
-   - El cliente explora el catálogo o carga su lista de útiles
-   - El sistema muestra disponibilidad en tiempo real
-   - Los productos seleccionados se agregan al carrito
+   - Cliente explora el catálogo o carga lista de útiles
+   - Sistema muestra disponibilidad en tiempo real
+   - Productos seleccionados se agregan al carrito
+   - Validación de stock y precios en tiempo real
 
 2. **Checkout:**
-   - El cliente inicia el proceso de compra
-   - El sistema reserva el stock por 15 minutos
-   - Se completan datos de envío y facturación
-   - Se selecciona método de entrega (envío o retiro)
+   - Inicio del proceso de compra
+   - Reserva de stock por 15 minutos
+   - Autenticación/Registro de usuario
+   - Gestión de direcciones de envío/facturación
+   - Selección de método de envío y pago
+   - Aplicación de códigos de descuento
 
-3. **Pago:**
-   - Redirección a Mercado Pago
-   - Procesamiento seguro del pago
+3. **Procesamiento de Pago:**
+   - Integración con Mercado Pago
+   - Validación de datos de pago
+   - Procesamiento seguro de transacciones
    - Confirmación automática vía email
+   - Actualización de inventario
 
 4. **Preparación y Entrega:**
-   - El sistema notifica al administrador del nuevo pedido
-   - Se prepara el pedido y se actualiza el estado
-   - Se programa la entrega o se notifica para retiro
-   - El cliente recibe actualizaciones por email
+   - Notificación al administrador
+   - Actualización de estados del pedido
+   - Generación de etiquetas de envío
+   - Seguimiento en tiempo real
+   - Confirmación de entrega
 
-## 6) Integraciones
+### 7.2 Flujo de Gestión de Inventario
+1. Actualización de stock en tiempo real
+2. Alertas de stock mínimo
+3. Sincronización con puntos de venta físicos
+4. Gestión de devoluciones y ajustes
 
-- **Mercado Pago:** Para procesamiento de pagos seguros
-- **Sistema de Notificaciones:** Envío de emails transaccionales
-- **API de Códigos Postales:** Para cálculo de costos de envío
-- **Herramientas Analíticas:** Seguimiento de métricas y conversiones
+### 7.3 Flujo de Atención al Cliente
+1. Sistema de tickets de soporte
+2. Chat en vivo
+3. Seguimiento de reclamos
+4. Gestión de devoluciones
 
-## 7) Requisitos Técnicos
+## 8. Integraciones
 
-- **Frontend:**
-  - Navegadores web modernos (Chrome, Firefox, Safari, Edge)
-  - Diseño responsive para móviles y escritorio
-  - Soporte para carga de imágenes
+### 8.1 Pasarelas de Pago
+- **Mercado Pago**
+  - Procesamiento de pagos en línea
+  - Gestión de reembolsos
+  - Suscripciones recurrentes
+  - Split de pagos
 
-- **Backend:**
-  - Servidor con soporte para Node.js
-  - Base de datos PostgreSQL
-  - Almacenamiento en la nube para imágenes
-  - Certificado SSL para conexiones seguras
+### 8.2 Logística
+- **API de Códigos Postales**
+  - Cálculo de costos de envío
+  - Validación de direcciones
+  - Tiempos de entrega estimados
 
-- **Dispositivos Móviles:**
-  - Cámara para escanear listas de útiles
-  - Conexión a internet estable
+### 8.3 Comunicaciones
+- **Email Transaccional**
+  - Confirmaciones de pedido
+  - Actualizaciones de envío
+  - Facturas electrónicas
+  - Comunicaciones promocionales
 
-## 8) Próximas Mejoras (Fase 2)
+### 8.4 Analíticas
+- **Google Analytics**
+  - Seguimiento de conversiones
+  - Comportamiento de usuarios
+  - Embudos de conversión
 
-- **Para Clientes:**
-  - Aplicación móvil nativa
-  - Programa de fidelización
-  - Sistema de recomendaciones personalizadas
-  - Suscripciones para suministros recurrentes
-  - Asistente virtual para búsqueda de productos
+### 8.5 Seguridad
+- **reCAPTCHA**
+  - Prevención de fraude
+  - Protección contra bots
+  - Validación de formularios
 
-- **Para el Negocio:**
-  - Integración con sistemas de gestión escolar
-  - Módulo B2B para instituciones educativas
-  - Sistema de cotizaciones para compras al por mayor
-  - Integración con más opciones de envío (Andreani, OCA)
-  - Panel de control con métricas avanzadas
-  - Herramientas de marketing automatizado
+## 9. Seguridad y Cumplimiento
 
-- **Tecnológicas:**
-  - API pública para integraciones
-  - Mejoras en el reconocimiento de imágenes
-  - Sistema de caché para mejor rendimiento
-  - Internacionalización (múltiples idiomas y monedas)
+### 9.1 Medidas de Seguridad
+- Encriptación de datos en tránsito (TLS 1.3+)
+- Encriptación de datos en reposo (AES-256)
+- Autenticación de dos factores (2FA)
+- Protección contra inyección SQL
+- Prevención de XSS y CSRF
+- Rate limiting y protección DDoS
 
-## 9) Consideraciones Finales
+### 9.2 Cumplimiento Normativo
+- Ley de Protección de Datos Personales (Argentina)
+- RGPD (para clientes internacionales)
+- PCI DSS para procesamiento de pagos
+- Facturación electrónica AFIP
+- Retenciones impositivas automáticas
 
-Este documento representa la versión inicial del sistema y está sujeto a ajustes según las necesidades del negocio y la retroalimentación de los usuarios. El enfoque inicial está en garantizar una experiencia de compra fluida y confiable, con especial atención al control de inventario y la generación de presupuestos a partir de listas de útiles escolares.
+### 9.3 Auditoría y Monitoreo
+- Registro detallado de auditoría
+- Monitoreo 24/7
+- Alertas de seguridad
+- Copias de seguridad automáticas
+- Plan de recuperación ante desastres
 
+## 10. Hoja de Ruta
+
+### 10.1 Fase 1 - MVP (Mes 1-3)
+- Catálogo de productos básico
+- Carrito de compras y checkout
+- Integración con Mercado Pago
+- Panel de administración básico
+- Gestión de usuarios
+
+### 10.2 Fase 2 - Optimización (Mes 4-6)
+- Sistema de fidelización
+- Recomendaciones personalizadas
+- Mejoras en UX/UI
+- Optimización de rendimiento
+- Herramientas de marketing
+
+### 10.3 Fase 3 - Expansión (Mes 7-12)
+- Aplicación móvil nativa
+- Integración con sistemas escolares
+- Comercio B2B
+- Internacionalización
+- Inteligencia de negocios avanzada
+
+### 10.4 Futuras Mejoras
+- Asistente virtual con IA
+- Realidad aumentada para visualización de productos
+- Integración con redes sociales
+- Marketplace para vendedores externos
+- Sistema de dropshipping
+
+## 11. Documentación Adicional
+
+### 11.1 Glosario de Términos
+- **SKU**: Código único de identificación de producto
+- **B2B**: Negocio a Negocio (Business to Business)
+- **KPI**: Indicador Clave de Rendimiento
+- **API**: Interfaz de Programación de Aplicaciones
+- **UI/UX**: Interfaz de Usuario / Experiencia de Usuario
+
+### 11.2 Referencias
+- Documentación de la API
+- Manual de Usuario
+- Guía de Implementación
+- Políticas de Seguridad
+
+### 11.3 Historial de Cambios
+| Versión | Fecha       | Descripción de Cambios                     |
+|---------|-------------|--------------------------------------------|
+| 1.0     | 05/10/2024  | Versión inicial del documento              |
+| 1.1     | 05/10/2024  | Actualización de requisitos técnicos        |
+| 1.2     | 05/10/2024  | Adición de diagramas de arquitectura        |
+
+## 12. Aprobaciones
+
+**Elaborado por:** ____________________  
+**Revisado por:** ____________________  
 **Aprobado por:** ____________________  
-**Fecha:** __________
+**Fecha de Aprobación:** __________
+
+---
+*Documento propiedad de Librería Arco Iris. Uso exclusivo interno.*

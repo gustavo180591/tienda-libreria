@@ -1,2 +1,2 @@
--- Enable the citext extension
+-- CreateExtension
 CREATE EXTENSION IF NOT EXISTS citext;
