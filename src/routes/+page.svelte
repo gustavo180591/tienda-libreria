@@ -1,123 +1,232 @@
 <script lang="ts">
-  import ProductCard from '$lib/components/products/ProductCard.svelte';
+  import { onMount } from 'svelte';
   
-  // Datos de ejemplo - En producción, estos vendrán de tu API
-  const productosDestacados = [
+  const categories = [
+    { name: 'Libros', icon: '📚', count: 12 },
+    { name: 'Librería', icon: '✏️', count: 8 },
+    { name: 'Papelería', icon: '📝', count: 15 }
+  ];
+  
+  const featuredProducts = [
     {
-      id: '1',
-      nombre: 'Cuaderno Universitario A4',
-      descripcion: 'Cuaderno universitario tapa dura, 200 hojas rayadas',
-      precio: 25.99,
-      precioOferta: 19.99,
-      imagenUrl: 'https://images.unsplash.com/photo-1581235720704-06d3acfcb36f?w=500&auto=format&fit=crop',
-      esNovedad: true,
-      esDestacado: true
+      name: 'Cien Años de Soledad',
+      category: 'Libros',
+      price: 24.99,
+      image: 'https://images.unsplash.com/photo-1544947950-fa07a98d237f?ixlib=rb-1.2.1&auto=format&fit=crop&w=800&q=80',
+      rating: 4.8
     },
     {
-      id: '2',
-      nombre: 'Set de Lápices de Colores x12',
-      descripcion: 'Set de 12 lápices de colores profesionales',
-      precio: 35.50,
-      imagenUrl: 'https://images.unsplash.com/photo-1570846356915-b5b8b5d8a6e1?w=500&auto=format&fit=crop',
-      esDestacado: true
+      name: 'Cuaderno Universitario',
+      category: 'Librería',
+      price: 8.99,
+      image: 'https://images.unsplash.com/photo-1541140532154-b024d705b90a?ixlib=rb-1.2.1&auto=format&fit=crop&w=800&q=80',
+      rating: 4.6
     },
     {
-      id: '3',
-      nombre: 'Mochila Escolar Impermeable',
-      descripcion: 'Mochila con múltiples compartimentos y diseño ergonómico',
-      precio: 89.99,
-      precioOferta: 75.50,
-      imagenUrl: 'https://images.unsplash.com/photo-1553062407-98eeb64c6a62?w=500&auto=format&fit=crop',
-      esDestacado: true
-    },
-    {
-      id: '4',
-      nombre: 'Estuche Escolar Profesional',
-      descripcion: 'Estuche con múltiples compartimentos para lápices y útiles',
-      precio: 29.99,
-      imagenUrl: 'https://images.unsplash.com/photo-1501503069356-3fce2a0e016f?w=500&auto=format&fit=crop',
-      esNovedad: true,
-      esDestacado: true
+      name: 'Juego de Escuadras',
+      category: 'Papelería',
+      price: 5.99,
+      image: 'https://images.unsplash.com/photo-1585336261022-680e295ce3fe?ixlib=rb-1.2.1&auto=format&fit=crop&w=800&q=80',
+      rating: 4.5
     }
   ];
+  
+  // Simple animation on scroll
+  onMount(() => {
+    const observer = new IntersectionObserver((entries) => {
+      entries.forEach(entry => {
+        if (entry.isIntersecting) {
+          entry.target.classList.add('fade-in-visible');
+        }
+      });
+    }, { threshold: 0.1 });
+    
+    document.querySelectorAll('.fade-in').forEach((el) => observer.observe(el));
+  });
 </script>
 
-<main class="bg-gray-50 py-8">
-  <!-- Hero Section -->
-  <div class="bg-indigo-700 text-white py-16">
-    <div class="container mx-auto px-4 text-center">
-      <h1 class="text-4xl font-bold mb-4">Bienvenido a Tienda Librería</h1>
-      <p class="text-xl mb-8">Encuentra todo lo que necesitas para el nuevo ciclo escolar</p>
-      <a 
-        href="/categorias" 
-        class="bg-white text-indigo-700 font-bold py-3 px-6 rounded-full hover:bg-indigo-100 transition-colors duration-200"
-      >
-        Ver Catálogo
-      </a>
+<svelte:head>
+  <title>Librería y Papelería - Inicio</title>
+  <meta name="description" content="Encuentra los mejores libros y artículos de papelería a los mejores precios." />
+</svelte:head>
+
+<!-- Hero Section -->
+<section class="hero">
+  <div class="hero-content">
+    <h1 class="text-4xl md:text-6xl font-bold mb-6 fade-in">Bienvenido a Nuestra Librería</h1>
+    <p class="text-xl mb-8 fade-in" style="animation-delay: 0.2s">Descubre nuestra amplia selección de libros y artículos de papelería</p>
+    <div class="flex flex-col sm:flex-row gap-4 fade-in" style="animation-delay: 0.4s">
+      <a href="/products" class="btn btn-primary">Ver Productos</a>
+      <a href="#categories" class="btn btn-outline">Explorar Categorías</a>
     </div>
   </div>
+</section>
 
-  <!-- Productos Destacados -->
-  <section class="container mx-auto px-4 py-12">
-    <div class="flex justify-between items-center mb-8">
-      <h2 class="text-2xl font-bold text-gray-900">Productos Destacados</h2>
-      <a 
-        href="/productos" 
-        class="text-indigo-600 hover:text-indigo-800 font-medium flex items-center"
-      >
-        Ver todos
-        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 ml-1" viewBox="0 0 20 20" fill="currentColor">
-          <path fill-rule="evenodd" d="M10.293 5.293a1 1 0 011.414 0l4 4a1 1 0 010 1.414l-4 4a1 1 0 01-1.414-1.414L12.586 11H5a1 1 0 110-2h7.586l-2.293-2.293a1 1 0 010-1.414z" clip-rule="evenodd" />
-        </svg>
-      </a>
-    </div>
-    
-    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-      {#each productosDestacados as product}
-        <div class="h-full">
-          <ProductCard {product} />
+<!-- Featured Products -->
+<section class="py-16 bg-gray-50">
+  <div class="container mx-auto px-4">
+    <h2 class="text-3xl font-bold text-center mb-12 fade-in">Productos Destacados</h2>
+    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+      {#each featuredProducts as product, i}
+        <div class="bg-white rounded-lg shadow-md overflow-hidden fade-in" 
+             style="animation-delay: {0.2 + (i * 0.1)}s">
+          <img src={product.image} alt={product.name} class="w-full h-64 object-cover">
+          <div class="p-6">
+            <div class="flex justify-between items-start">
+              <div>
+                <h3 class="text-xl font-semibold">{product.name}</h3>
+                <p class="text-gray-600">{product.category}</p>
+              </div>
+              <div class="flex items-center text-yellow-500">
+                <span class="mr-1">★</span>
+                <span>{product.rating}</span>
+              </div>
+            </div>
+            <div class="mt-4 flex justify-between items-center">
+              <span class="text-2xl font-bold">${product.price.toFixed(2)}</span>
+              <button class="btn btn-sm btn-primary">Añadir al carrito</button>
+            </div>
+          </div>
         </div>
       {/each}
     </div>
-  </section>
-
-  <!-- Categorías Populares -->
-  <section class="bg-white py-12">
-    <div class="container mx-auto px-4">
-      <h2 class="text-2xl font-bold text-gray-900 mb-8">Explorar Categorías</h2>
-      <div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4">
-        {#each [
-          { name: 'Libros', icon: '📚', count: 245 },
-          { name: 'Papelería', icon: '📝', count: 189 },
-          { name: 'Arte', icon: '🎨', count: 76 },
-          { name: 'Oficina', icon: '🏢', count: 112 },
-          { name: 'Escolar', icon: '✏️', count: 203 },
-          { name: 'Tecnología', icon: '💻', count: 58 }
-        ] as category}
-          <a 
-            href={`/categorias/${category.name.toLowerCase()}`}
-            class="bg-white p-6 rounded-lg shadow-sm border border-gray-100 hover:shadow-md transition-shadow flex flex-col items-center text-center"
-          >
-            <span class="text-3xl mb-2">{category.icon}</span>
-            <h3 class="font-medium text-gray-900">{category.name}</h3>
-            <p class="text-sm text-gray-500">{category.count} productos</p>
-          </a>
-        {/each}
-      </div>
-    </div>
-  </section>
-
-  <!-- Banner de Oferta -->
-  <div class="bg-gradient-to-r from-indigo-600 to-purple-600 text-white py-12 my-12">
-    <div class="container mx-auto px-4 text-center">
-      <h2 class="text-3xl font-bold mb-4">¡Hasta 40% de descuento!</h2>
-      <p class="text-xl mb-6">En toda la sección de útiles escolares</p>
-      <a 
-        href="/ofertas" 
-        class="bg-white text-indigo-700 font-bold py-3 px-8 rounded-full hover:bg-indigo-100 transition-colors duration-200 inline-block"
-      >
-        Ver Ofertas
-      </a>
+    <div class="text-center mt-10 fade-in">
+      <a href="/products" class="btn btn-outline">Ver todos los productos</a>
     </div>
   </div>
-</main>
+</section>
+
+<!-- Categories -->
+<section id="categories" class="py-16">
+  <div class="container mx-auto px-4">
+    <h2 class="text-3xl font-bold text-center mb-12 fade-in">Nuestras Categorías</h2>
+    <div class="grid grid-cols-1 md:grid-cols-3 gap-8">
+      {#each categories as category, i}
+        <a href={`/category/${category.name.toLowerCase()}`} 
+           class="category-card fade-in" 
+           style="animation-delay: {0.2 + (i * 0.1)}s">
+          <div class="text-5xl mb-4">{category.icon}</div>
+          <h3 class="text-xl font-semibold">{category.name}</h3>
+          <p class="text-gray-600">{category.count} productos</p>
+        </a>
+      {/each}
+    </div>
+  </div>
+</section>
+
+<!-- About Section -->
+<section class="py-16 bg-gray-50">
+  <div class="container mx-auto px-4">
+    <div class="max-w-4xl mx-auto text-center fade-in">
+      <h2 class="text-3xl font-bold mb-6">Sobre Nosotros</h2>
+      <p class="text-lg text-gray-700 mb-8">
+        En nuestra librería y papelería, nos apasiona ofrecer una amplia selección de libros y artículos de papelería de la más alta calidad. 
+        Nuestro objetivo es fomentar la lectura y la creatividad en nuestra comunidad.
+      </p>
+      <a href="/about" class="btn btn-primary">Conócenos más</a>
+    </div>
+  </div>
+</section>
+
+<!-- Contact CTA -->
+<section class="py-16 bg-primary text-white">
+  <div class="container mx-auto px-4 text-center fade-in">
+    <h2 class="text-3xl font-bold mb-4">¿Tienes alguna pregunta?</h2>
+    <p class="text-xl mb-8">Estamos aquí para ayudarte. Contáctanos hoy mismo.</p>
+    <a href="/contact" class="btn btn-white">Contáctanos</a>
+  </div>
+</section>
+
+<style>
+  /* Base Styles */
+  :global(body) {
+    @apply bg-white text-gray-900;
+  }
+  
+  /* Hero Section */
+  .hero {
+    @apply relative h-[80vh] flex items-center justify-center text-center text-white;
+    background: linear-gradient(rgba(0, 0, 0, 0.5), rgba(0, 0, 0, 0.5)), 
+                url('https://images.unsplash.com/photo-1524995997941-a3c9e725917a?ixlib=rb-1.2.1&auto=format&fit=crop&w=1950&q=80');
+    background-size: cover;
+    background-position: center;
+  }
+  
+  .hero-content {
+    @apply max-w-4xl px-4;
+  }
+  
+  /* Buttons */
+  .btn {
+    @apply px-6 py-3 rounded-md font-medium transition-all duration-300 inline-flex items-center justify-center;
+  }
+  
+  .btn-primary {
+    @apply bg-primary text-white hover:bg-primary-dark;
+  }
+  
+  .btn-outline {
+    @apply border-2 border-primary text-primary hover:bg-primary hover:text-white;
+  }
+  
+  .btn-white {
+    @apply bg-white text-primary hover:bg-gray-100;
+  }
+  
+  .btn-sm {
+    @apply px-4 py-2 text-sm;
+  }
+  
+  /* Category Cards */
+  .category-card {
+    @apply bg-white p-8 rounded-lg shadow-md text-center transition-all duration-300 hover:shadow-lg hover:transform hover:-translate-y-1;
+  }
+  
+  /* Animations */
+  .fade-in {
+    @apply opacity-0 translate-y-6 transition-all duration-500 ease-out;
+  }
+  
+  .fade-in-visible {
+    @apply opacity-100 translate-y-0;
+  }
+  
+  /* Container */
+  .container {
+    @apply max-w-7xl mx-auto;
+  }
+  
+  /* Colors */
+  .bg-primary {
+    background-color: #3b82f6; /* blue-500 */
+  }
+  
+  .bg-primary-dark {
+    background-color: #2563eb; /* blue-600 */
+  }
+  
+  .text-primary {
+    color: #3b82f6; /* blue-500 */
+  }
+  
+  .border-primary {
+    border-color: #3b82f6; /* blue-500 */
+  }
+  
+  /* Responsive Design */
+  @media (max-width: 768px) {
+    .hero {
+      @apply h-[60vh];
+    }
+    
+    .hero-content h1 {
+      @apply text-5xl;
+    }
+  }
+  
+  @media (max-width: 640px) {
+    .hero-content h1 {
+      @apply text-4xl;
+    }
+  }
+</style>

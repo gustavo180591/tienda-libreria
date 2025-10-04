@@ -1,301 +1,302 @@
-// This is your Prisma schema file,
-// learn more about it in the docs: https://pris.ly/d/prisma-schema
+// -----------------------------------------------------------------------------
+// schema.prisma — Proyecto tincho (versión mejorada y lista para producción)
+// DB: PostgreSQL | Prisma >=5.x
+// -----------------------------------------------------------------------------
 
 generator client {
   provider = "prisma-client-js"
-  output   = "../node_modules/.prisma/client"
 }
 
 datasource db {
   provider = "postgresql"
   url      = env("DATABASE_URL")
-  shadowDatabaseUrl = env("SHADOW_DATABASE_URL")
 }
 
-// Modelo de Usuario
-model Usuario {
-  id              String    @id @default(uuid())
-  email           String    @unique
-  nombre          String
-  apellido        String?
-  password        String
-  direccion       String?
-  telefono        String?
-  rol             Rol       @default(USUARIO)
-  activo          Boolean   @default(true)
-  fechaCreacion   DateTime  @default(now())
-  fechaActualizacion DateTime @updatedAt
-  pedidos         Pedido[]
-  direccionesEnvio DireccionEnvio[]
-  carrito         Carrito?
-  
-  @@map("usuarios")
-}
-
-// Modelo de Dirección de Envío
-model DireccionEnvio {
-  id             String   @id @default(uuid())
-  calle          String
-  ciudad         String
-  provincia      String
-  codigoPostal   String
-  pais           String   @default("Argentina")
-  esPrincipal    Boolean  @default(false)
-  usuarioId      String
-  usuario        Usuario  @relation(fields: [usuarioId], references: [id], onDelete: Cascade)
-  pedidos        Pedido[]
-  
-  @@map("direcciones_envio")
-}
-
-// Modelo de Marca
-model Marca {
-  id              String     @id @default(uuid())
-  nombre          String     @unique
-  descripcion     String?
-  logoUrl         String?
-  productos       Producto[]
-  activa          Boolean    @default(true)
-  fechaCreacion   DateTime   @default(now())
-  fechaActualizacion DateTime @updatedAt
-  
-  @@map("marcas")
-}
-
-// Modelo de Categoría
-model Categoria {
-  id              String     @id @default(uuid())
-  nombre          String     @unique
-  descripcion     String?
-  imagenUrl       String?
-  categoriaPadreId String?
-  categoriaPadre  Categoria? @relation("CategoriaHija", fields: [categoriaPadreId], references: [id], onDelete: SetNull)
-  categoriasHijas Categoria[] @relation("CategoriaHija")
-  productos       ProductoCategoria[]
-  activa          Boolean    @default(true)
-  fechaCreacion   DateTime   @default(now())
-  fechaActualizacion DateTime @updatedAt
-  
-  @@map("categorias")
-}
-
-// Modelo de Producto
-model Producto {
-  id              String     @id @default(uuid())
-  nombre          String
-  descripcion     String
-  descripcionLarga String?
-  precio          Float
-  precioOferta    Float?
-  sku             String     @unique
-  marcaId         String
-  marca           Marca      @relation(fields: [marcaId], references: [id])
-  categorias      ProductoCategoria[]
-  variantes       Variante[]
-  itemsCarrito    ItemCarrito[]
-  itemsPedido     ItemPedido[]
-  imagenes        ImagenProducto[]
-  calificacionPromedio Float? @default(0)
-  totalVendidos   Int        @default(0)
-  stockTotal       Int       @default(0)
-  esDestacado     Boolean    @default(false)
-  esNovedad       Boolean    @default(true)
-  activo          Boolean    @default(true)
-  fechaCreacion   DateTime   @default(now())
-  fechaActualizacion DateTime @updatedAt
-  
-  @@map("productos")
-}
-
-// Modelo de relación muchos a muchos entre Producto y Categoría
-model ProductoCategoria {
-  productoId      String
-  categoriaId     String
-  producto        Producto   @relation(fields: [productoId], references: [id], onDelete: Cascade)
-  categoria       Categoria  @relation(fields: [categoriaId], references: [id], onDelete: Cascade)
-  
-  @@id([productoId, categoriaId])
-  @@map("producto_categorias")
-}
-
-// Modelo de Variante de Producto
-model Variante {
-  id              String     @id @default(uuid())
-  productoId      String
-  producto        Producto   @relation(fields: [productoId], references: [id], onDelete: Cascade)
-  nombre          String     // Ej: "Color", "Tamaño"
-  valor           String     // Ej: "Rojo", "XL"
-  sku             String     @unique
-  precioAdicional Float      @default(0)
-  stock           Int        @default(0)
-  activa          Boolean    @default(true)
-  itemsCarrito    ItemCarrito[]
-  itemsPedido     ItemPedido[]
-  fechaCreacion   DateTime   @default(now())
-  fechaActualizacion DateTime @updatedAt
-  
-  @@map("variantes")
-}
-
-// Modelo de Imagen de Producto
-model ImagenProducto {
-  id              String     @id @default(uuid())
-  productoId      String
-  producto        Producto   @relation(fields: [productoId], references: [id], onDelete: Cascade)
-  url             String
-  esPrincipal     Boolean    @default(false)
-  orden           Int        @default(0)
-  fechaCreacion   DateTime   @default(now())
-  
-  @@map("imagenes_producto")
-}
-
-// Modelo de Carrito de Compras
-model Carrito {
-  id              String     @id @default(uuid())
-  usuarioId       String     @unique
-  usuario         Usuario    @relation(fields: [usuarioId], references: [id], onDelete: Cascade)
-  items           ItemCarrito[]
-  fechaCreacion   DateTime   @default(now())
-  fechaActualizacion DateTime @updatedAt
-  
-  @@map("carritos")
-}
-
-// Modelo de Ítem del Carrito
-model ItemCarrito {
-  id              String     @id @default(uuid())
-  carritoId       String
-  carrito         Carrito    @relation(fields: [carritoId], references: [id], onDelete: Cascade)
-  productoId      String
-  producto        Producto   @relation(fields: [productoId], references: [id])
-  varianteId      String?
-  variante        Variante?  @relation(fields: [varianteId], references: [id])
-  cantidad        Int        @default(1)
-  precioUnitario  Float
-  fechaCreacion   DateTime   @default(now())
-  fechaActualizacion DateTime @updatedAt
-  
-  @@map("items_carrito")
-}
-
-// Modelo de Pedido
-model Pedido {
-  id              String     @id @default(uuid())
-  codigo          String     @unique
-  usuarioId       String
-  usuario         Usuario    @relation(fields: [usuarioId], references: [id])
-  direccionEnvioId String
-  direccionEnvio  DireccionEnvio @relation(fields: [direccionEnvioId], references: [id])
-  items           ItemPedido[]
-  estado          EstadoPedido @default(PENDIENTE)
-  subtotal        Float
-  envio           Float
-  impuestos       Float
-  total           Float
-  metodoPago      MetodoPago
-  pago            Pago?
-  envioDetalle    Envio?
-  notas           String?
-  fechaCreacion   DateTime   @default(now())
-  fechaActualizacion DateTime @updatedAt
-  
-  @@map("pedidos")
-}
-
-// Modelo de Ítem de Pedido
-model ItemPedido {
-  id              String     @id @default(uuid())
-  pedidoId        String
-  pedido          Pedido     @relation(fields: [pedidoId], references: [id], onDelete: Cascade)
-  productoId      String
-  producto        Producto   @relation(fields: [productoId], references: [id])
-  varianteId      String?
-  variante        Variante?  @relation(fields: [varianteId], references: [id])
-  cantidad        Int
-  precioUnitario  Float
-  nombreProducto  String
-  varianteNombre  String?
-  
-  @@map("items_pedido")
-}
-
-// Modelo de Pago
-model Pago {
-  id              String     @id @default(uuid())
-  pedidoId        String     @unique
-  pedido          Pedido     @relation(fields: [pedidoId], references: [id])
-  monto           Float
-  metodoPago      MetodoPago
-  estado          EstadoPago @default(PENDIENTE)
-  referencia      String?    // ID de referencia del pago en la pasarela
-  datosPago       Json?      // Datos adicionales del pago
-  fechaCreacion   DateTime   @default(now())
-  fechaActualizacion DateTime @updatedAt
-  fechaAprobacion DateTime?
-  
-  @@map("pagos")
-}
-
-// Modelo de Envío
-model Envio {
-  id              String     @id @default(uuid())
-  pedidoId        String     @unique
-  pedido          Pedido     @relation(fields: [pedidoId], references: [id])
-  direccion       Json       // Datos de la dirección en el momento del envío
-  metodoEnvio     String
-  costo           Float
-  estado          EstadoEnvio @default(PENDIENTE)
-  codigoSeguimiento String?
-  transportista   String?
-  fechaEnvio      DateTime?
-  fechaEntrega    DateTime?
-  fechaCreacion   DateTime   @default(now())
-  fechaActualizacion DateTime @updatedAt
-  
-  @@map("envios")
-}
-
-// Enums
-enum Rol {
+// ================================ ENUMS ======================================
+enum Role {
   ADMIN
-  USUARIO
-  REPARTIDOR
+  MANAGER
+  CUSTOMER
 }
 
-enum EstadoPedido {
-  PENDIENTE
-  PAGO_PENDIENTE
-  PAGO_APROBADO
-  EN_PREPARACION
-  EN_CAMINO
-  ENTREGADO
-  CANCELADO
-  RECHAZADO
-  DEVUELTO
+enum Currency {
+  ARS
+  USD
 }
 
-enum EstadoPago {
-  PENDIENTE
-  APROBADO
-  RECHAZADO
-  REEMBOLSADO
-  ERROR
+enum OrderStatus {
+  PENDING
+  PROCESSING
+  COMPLETED
+  CANCELLED
 }
 
-enum EstadoEnvio {
-  PENDIENTE
-  EN_PROCESO
-  EN_TRANSITO
-  ENTREGADO
-  DEVUELTO
-  CANCELADO
+// ================================ MODELS =====================================
+// Usuarios
+model User {
+  id           String    @id @default(cuid())
+  email        String    @unique @db.Citext   // Búsqueda case-insensitive
+  passwordHash String
+  firstName    String?   @db.VarChar(80)
+  lastName     String?   @db.VarChar(80)
+  role         Role      @default(CUSTOMER)
+  deletedAt    DateTime? @default(dbgenerated("NULL")) @map("deleted_at")
+  
+  // Relaciones
+  orders    Order[]
+  addresses Address[]
+  carts     Cart[]
+  
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+  
+  @@map("users")
+  @@index([email])
 }
 
-enum MetodoPago {
-  MERCADO_PAGO
-  TRANSFERENCIA_BANCARIA
-  EFECTIVO
-  TARJETA_CREDITO
-  TARJETA_DEBITO
+// Categorías
+model Category {
+  id          String    @id @default(cuid())
+  name        String    @db.VarChar(100)
+  slug        String    @unique @db.Citext   // Búsqueda case-insensitive
+  description String?   @db.Text
+  isActive    Boolean   @default(true) @map("is_active")
+  deletedAt   DateTime? @default(dbgenerated("NULL")) @map("deleted_at")
+  
+  // Relaciones
+  products Product[]
+  
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+  
+  @@map("categories")
+  @@index([name])
+  @@index([slug])
 }
+
+// Productos
+model Product {
+  id          String    @id @default(cuid())
+  name        String    @db.VarChar(160)
+  slug        String    @unique @db.Citext   // Búsqueda case-insensitive
+  description String?   @db.Text
+  isActive    Boolean   @default(true) @map("is_active")
+  featured    Boolean   @default(false)
+  categoryId  String
+  
+  // Relaciones
+  category Category   @relation(fields: [categoryId], references: [id])
+  variants ProductVariant[]
+  media    Media[]    @relation("ProductMedia")
+  orderItems OrderItem[]
+  cartItems CartItem[]
+  
+  deletedAt DateTime? @default(dbgenerated("NULL")) @map("deleted_at")
+  createdAt DateTime  @default(now()) @map("created_at")
+  updatedAt DateTime  @updatedAt @map("updated_at")
+  
+  // Índices
+  @@index([categoryId, isActive, featured])
+  @@index([createdAt])
+  @@map("products")
+}
+
+// Variantes de Producto
+model ProductVariant {
+  id        String    @id @default(cuid())
+  name      String    @db.VarChar(120)
+  sku       String    @unique @db.Citext   // Búsqueda case-insensitive
+  price     Decimal   @default(0) @db.Decimal(10, 2)
+  stock     Int       @default(0)
+  isActive  Boolean   @default(true) @map("is_active")
+  productId String
+  
+  // Relaciones
+  product Product  @relation(fields: [productId], references: [id], onDelete: Cascade)
+  media   Media[]  @relation("VariantMedia")
+  orderItems OrderItem[]
+  cartItems CartItem[]
+  
+  deletedAt DateTime? @default(dbgenerated("NULL")) @map("deleted_at")
+  createdAt DateTime  @default(now()) @map("created_at")
+  updatedAt DateTime  @updatedAt @map("updated_at")
+  
+  // Índices
+  @@index([isActive, stock])
+  @@index([price])
+  @@index([productId])
+  @@map("product_variants")
+}
+
+// Media (imágenes/videos)
+model Media {
+  id        String    @id @default(cuid())
+  url       String    @db.Text
+  alt       String?   @db.VarChar(160)
+  sortOrder Int       @default(0) @map("sort_order")
+  
+  // Relaciones
+  productId String?
+  product   Product?         @relation("ProductMedia", fields: [productId], references: [id], onDelete: Cascade)
+  
+  variantId String?
+  variant   ProductVariant?  @relation("VariantMedia", fields: [variantId], references: [id], onDelete: Cascade)
+  
+  deletedAt DateTime? @default(dbgenerated("NULL")) @map("deleted_at")
+  createdAt DateTime  @default(now()) @map("created_at")
+  
+  // Índices
+  @@index([productId])
+  @@index([variantId])
+  @@map("media")
+}
+
+// Órdenes
+model Order {
+  id               String      @id @default(cuid())
+  userId           String?
+  user             User?       @relation(fields: [userId], references: [id])
+  status           OrderStatus @default(PENDING)
+  total            Decimal     @default(0) @db.Decimal(10, 2)
+  currency         Currency    @default(ARS)
+  shippingAmount   Decimal     @default(0) @db.Decimal(10, 2) @map("shipping_amount")
+  taxAmount        Decimal     @default(0) @db.Decimal(10, 2) @map("tax_amount")
+  discountAmount   Decimal     @default(0) @db.Decimal(10, 2) @map("discount_amount")
+  shippingAddress  Json?       @map("shipping_address")
+  billingAddress   Json?       @map("billing_address")
+  
+  // Relaciones
+  items    OrderItem[]
+  payments Payment[]
+  
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+  
+  // Índices
+  @@index([userId])
+  @@index([status])
+  @@index([createdAt])
+  @@index([currency])  // Agregado para búsquedas por moneda
+  @@map("orders")
+}
+
+// Ítems de Orden
+model OrderItem {
+  id           String    @id @default(cuid())
+  orderId      String    @map("order_id")
+  order        Order     @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  productId    String?   @map("product_id")
+  product      Product?  @relation(fields: [productId], references: [id], onDelete: SetNull)
+  variantId    String?   @map("variant_id")
+  variant      ProductVariant? @relation(fields: [variantId], references: [id], onDelete: SetNull)
+  quantity     Int       @default(1)
+  unitPrice    Decimal   @db.Decimal(10, 2) @map("unit_price")
+  lineTotal    Decimal   @db.Decimal(10, 2) @map("line_total")
+  
+  // Snapshots para preservar información histórica
+  productName  String    @db.VarChar(160) @map("product_name")
+  variantName  String?   @db.VarChar(120) @map("variant_name")
+  sku          String?   @db.Citext   // Búsqueda case-insensitive
+  
+  createdAt    DateTime  @default(now()) @map("created_at")
+  
+  // Índices
+  @@index([orderId])
+  @@index([orderId, createdAt])  // Para búsquedas por orden y fecha
+  @@index([productId])
+  @@index([variantId])
+  @@index([sku])
+  @@map("order_items")
+}
+
+// Carritos
+model Cart {
+  id         String    @id @default(cuid())
+  sessionId  String?   @unique @db.VarChar(255) @map("session_id")
+  userId     String?   @map("user_id")
+  user       User?     @relation(fields: [userId], references: [id])
+  currency   Currency  @default(ARS)
+  
+  // Relaciones
+  items CartItem[]
+  
+  createdAt  DateTime  @default(now()) @map("created_at")
+  updatedAt  DateTime  @updatedAt @map("updated_at")
+  
+  // Índices
+  @@index([sessionId])
+  @@index([userId])
+  @@map("carts")
+}
+
+// Ítems de Carrito
+model CartItem {
+  id           String    @id @default(cuid())
+  cartId       String    @map("cart_id")
+  cart         Cart      @relation(fields: [cartId], references: [id], onDelete: Cascade)
+  productId    String    @map("product_id")
+  product      Product   @relation(fields: [productId], references: [id])
+  variantId    String?   @map("variant_id")
+  variant      ProductVariant? @relation(fields: [variantId], references: [id])
+  quantity     Int       @default(1)
+  
+  // Precio al momento de agregar al carrito
+  unitPrice    Decimal   @db.Decimal(10, 2) @map("unit_price")
+  currency     Currency  @default(ARS)
+  
+  createdAt    DateTime  @default(now()) @map("created_at")
+  updatedAt    DateTime  @updatedAt @map("updated_at")
+  
+  // Índices
+  @@index([cartId])
+  @@index([productId])
+  @@index([variantId])
+  @@map("cart_items")
+}
+
+// Direcciones
+model Address {
+  id          String    @id @default(cuid())
+  userId      String    @map("user_id")
+  user        User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  street      String    @db.VarChar(120)
+  city        String    @db.VarChar(80)
+  state       String    @db.VarChar(80)
+  postalCode  String    @db.VarChar(16) @map("postal_code")
+  country     String    @default("Argentina") @db.VarChar(56)
+  isDefault   Boolean   @default(false) @map("is_default")
+  
+  deletedAt   DateTime? @default(dbgenerated("NULL")) @map("deleted_at")
+  createdAt   DateTime  @default(now()) @map("created_at")
+  updatedAt   DateTime  @updatedAt @map("updated_at")
+  
+  // Índices
+  @@index([userId])
+  @@map("addresses")
+}
+
+// Pagos
+model Payment {
+  id           String    @id @default(cuid())
+  orderId      String    @map("order_id")
+  order        Order     @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  amount       Decimal   @db.Decimal(10, 2)
+  method       String    @db.VarChar(50)
+  status       String    @db.VarChar(50)
+  reference    String?   @unique @db.VarChar(100)
+  processedAt  DateTime? @map("processed_at")
+  
+  createdAt    DateTime  @default(now()) @map("created_at")
+  updatedAt    DateTime  @updatedAt @map("updated_at")
+  
+  // Índices
+  @@index([orderId])
+  @@index([status])
+  @@index([reference])
+  @@index([processedAt])
+  @@map("payments")
+}
+
+// ============================== EXTENSIONES ==================================
+// Para habilitar búsquedas case-insensitive en emails y slugs
+// Ejecutar en la base de datos: CREATE EXTENSION IF NOT EXISTS citext;

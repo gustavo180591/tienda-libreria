@@ -10,18 +10,18 @@ services:
   # Base de datos PostgreSQL
   db:
     image: postgres:16-alpine
-    container_name: tienda-libreria-db
+    container_name: tienda_libreria_db
     environment:
       POSTGRES_USER: postgres
       POSTGRES_PASSWORD: postgres
-      POSTGRES_DB: tienda-libreria
+      POSTGRES_DB: tienda_libreria
     ports:
       - "5433:5432"   # Puerto mapeado para acceso desde el host
     volumes:
       - postgres_data:/var/lib/postgresql/data
       - ./docker/postgres/init.sql:/docker-entrypoint-initdb.d/init.sql
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U postgres -d tienda-libreria"]
+      test: ["CMD-SHELL", "pg_isready -U postgres -d tienda_libreria"]
       interval: 5s
       timeout: 3s
       retries: 10
@@ -73,12 +73,18 @@ services:
     command: ["npm", "run", "dev", "--", "--host", "0.0.0.0"]
     ports:
       - "5173:5173"
+    env_file:
+      - .env
     environment:
       - NODE_ENV=development
-      - DATABASE_URL=postgresql://postgres:postgres@db:5432/tienda-libreria
+      - DATABASE_URL=postgresql://postgres:postgres@db:5432/tienda_libreria
+      - SHADOW_DATABASE_URL=postgresql://postgres:postgres@db:5432/tienda_libreria_shadow
       - REDIS_URL=redis://:your-redis-password@redis:6379
       - SESSION_SECRET=your-secret-key-change-this
       - NODE_OPTIONS=--max-old-space-size=2048
+      - UPLOAD_DIR=/data/uploads
+      - EXTRACTION_DIR=/data/extractions
+      - MAX_UPLOAD_MB=20
     volumes:
       - .:/usr/src/app
       - /usr/src/app/node_modules
@@ -104,9 +110,11 @@ services:
       target: development
     container_name: tienda-libreria-worker
     command: ["npm", "run", "worker:dev"]
+    env_file:
+      - .env
     environment:
       - NODE_ENV=development
-      - DATABASE_URL=postgresql://postgres:postgres@db:5432/tienda-libreria
+      - DATABASE_URL=postgresql://postgres:postgres@db:5432/tienda_libreria
       - REDIS_URL=redis://:your-redis-password@redis:6379
       - UPLOAD_DIR=/data/uploads
       - EXTRACTION_DIR=/data/extractions

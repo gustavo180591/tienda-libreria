@@ -1,0 +1,10 @@
+{
+  "name": "linear",
+  "type": "linear",
+  "baseUrl": "https://api.linear.app",
+  "auth": { "type": "env", "var": "LINEAR_API_KEY" },
+  "defaults": {
+    "teamId": "${LINEAR_TEAM_ID}"
+  },
+  "capabilities": ["createIssues", "updateIssue", "addComment", "listIssues"]
+}
