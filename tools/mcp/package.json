@@ -1,0 +1,16 @@
+{
+  "name": "mcp-tools",
+  "version": "1.0.0",
+  "description": "Herramientas MCP para automatización de desarrollo",
+  "main": "index.js",
+  "scripts": {
+    "backlog": "ts-node playbooks/backlog_from_requirements.ts",
+    "tdd": "ts-node playbooks/tdd_scaffold.ts",
+    "release-notes": "ts-node playbooks/release_notes.ts"
+  },
+  "dependencies": {
+    "@linear/sdk": "^2.3.0",
+    "@octokit/rest": "^19.0.13",
+    "dotenv": "^16.0.3",
+    "openai": "^4.0.0",
+    

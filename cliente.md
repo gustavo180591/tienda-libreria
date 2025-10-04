@@ -1,50 +1,67 @@
+# Estado del Proyecto
+
+[x] Configuración inicial del proyecto con SvelteKit y Tailwind CSS
+[x] Diseño responsive básico
+[x] Esquema de colores y tipografía
+[x] En desarrollo
+
+
 1) Propuesta de valor (clara y ganadora)
 
-Todo en un solo lugar: escolares, oficina, arte, premium (plumas/repuestos), kawaii/deco, organización minimal.
-
-Entrega país entero con tarifas claras y ETAs reales: AMBA 24–48 h, interior 48–96 h.
-
-Carritos “Lista Escolar en 1 clic”: subís foto/PDF/Excel → OCR + mapeo automático → carrito precargado por grado/colegio.
-
-Kits optimizados (Inicial/Primaria/Secundaria/Universidad/Arte/Oficina) con 3 niveles: Económico, Recomendado, Premium.
-
-Reposición inteligente: suscripción (repuestos hojas, minas, marcadores) y recordatorios de recarga.
-
-Precios transparentes en ARS IVA inc. + cuotas Ahora 3/6/12, Mercado Pago, transferencia, MODO, Rapipago/Pago Fácil.
+[x] Todo en un solo lugar: escolares, oficina, arte, premium (plumas/repuestos), kawaii/deco, organización minimal.
+[ ] Entrega país entero con tarifas claras y ETAs reales: AMBA 24–48 h, interior 48–96 h.
+[ ] Carritos "Lista Escolar en 1 clic": subís foto/PDF/Excel → OCR + mapeo automático →
 
 2) Catálogo maestro (sin olvidarnos de nada)
 
-Escritura
+**Escritura**
+- [x] Biromes (clásicas, gel, roller)
+- [x] Lápices grafito y de color
+- [ ] Portaminas + minas
+- [ ] Marcadores (pizarra/permanentes)
+- [ ] Resaltadores
+- [ ] Plumas y repuestos (cartuchos, convertidores, puntas)
 
-Biromes (clásicas, gel, roller), portaminas + minas, lápices grafito y de color, marcadores (pizarra/permanentes), resaltadores, plumas y repuestos (cartuchos, convertidores, puntas).
+**Papel & cuadernos**
+- [x] Cuadernos (A4/A5, tapa dura/blanda)
+- [x] Hojas de dibujo
+- [ ] Repuestos (Rivadavia/Éxito)
+- [ ] Blocks varios
+- [ ] Papel fotográfico
+- [ ] Sticky notes y fichas
 
-Papel & cuadernos
+**Organización & archivo**
+- [ ] Carpetas (anillas/escolares)
+- [ ] Folios y separadores
+- [ ] Planificadores y agendas
+- [ ] Biblioratos
+- [ ] Cajas de archivo
+- [ ] Estuches y organizadores de escritorio
 
-Cuadernos (A4/A5, tapa dura/blanda, rayado/cuadriculado/liso), repuestos (Rivadavia/Éxito), blocks, hojas dibujo, canson, papel vegetal/fotográfico, sticky notes, fichas.
+**Adhesivos & corte**
+- [ ] Pegamentos (barra, vinílico, pistola)
+- [ ] Correctores
+- [ ] Cintas (scotch/washi/embalaje)
+- [ ] Tijeras/cúters + repuestos
+**Dibujo & arte**
+- [x] Lápices de colores
+- [ ] Acrílicos/acuarelas/tempera
+- [ ] Pinceles y espátulas
+- [ ] Marcadores artísticos
+- [ ] Carbonilla y pasteles
+- [ ] Sets escolares de arte
 
-Organización & archivo
+**Tecnología & extra**
+- [ ] Calculadoras (básica/científica)
+- [ ] Reglas/escuadras/transportador/compás
+- [ ] Mochilas/cartucheras/portadibujos
+- [ ] Etiquetas escolares personalizadas
 
-Carpetas (anillas/ escolares), folios, separadores, planificadores, agendas, biblioratos, cajas archivo, estuches y organizadores de escritorio.
-
-Adhesivos & corte
-
-Pegamentos (barra, vinílico, pistola), correctores, cintas (scotch/washi/embalaje), tijeras/cúters + repuestos.
-
-Dibujo & arte
-
-Acrílicos/acuarelas/tempera, pinceles, espátulas, marcadores artísticos, carbonilla, pasteles, sets escolares de arte.
-
-Tecnología & extra
-
-Calculadoras (básica/científica), reglas/escuadras/transportador/compás, mochilas/cartucheras/portadibujos, etiquetas escolares personalizadas.
-
-Líneas temáticas
-
-Minimal MUJI-like: cuadernos neutros, lapiceras finas, organizers.
-
-Kawaii/decó: stickers, washi tapes, sets temáticos.
-
-Premium escritura (CultPens-style): Lamy, Pilot, Kaweco, TWSBI, recargas y nibs.
+**Líneas temáticas**
+- [x] Minimal MUJI-like: cuadernos neutros, lapiceras finas, organizers
+- [ ] Kawaii/decó: stickers, washi tapes, sets temáticos
+- [ ] Premium escritura: Lamy, Pilot, Kaweco, TWSBI, recargas y nibs
+- [ ] Oficina & empresa: insumos a granel, cajas por mayor, tintas/toners
 
 Oficina & empresa: insumos a granel, cajas por mayor, tintas/toners (curado por compatibilidad).
 

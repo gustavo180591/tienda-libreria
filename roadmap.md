@@ -48,19 +48,19 @@
 - [x] Configuración de base de datos PostgreSQL
 
 #### Autenticación y Autorización
-- [ ] **Sistema de Autenticación JWT**
-  - [ ] `POST /auth/register` - Registro de usuarios
-    - Validación con Zod 3.22.0
-    - Hash de contraseñas con BcryptJS 2.4.3
-  - [ ] `POST /auth/login` - Login con JWT
-    - Generación de tokens JWT
-    - Manejo de sesiones seguras
-  - [ ] Middleware de autenticación
-    - Verificación de tokens JWT
-    - Extracción de datos de usuario
+- [x] **Sistema de Autenticación JWT**
+  - [x] `POST /auth/register` - Registro de usuarios
+    - [x] Validación con Zod 3.22.0
+    - [x] Hash de contraseñas con BcryptJS 2.4.3
+  - [x] `POST /auth/login` - Login con JWT
+    - [x] Generación de tokens JWT
+    - [x] Manejo de sesiones seguras
+  - [x] Middleware de autenticación
+    - [x] Verificación de tokens JWT
+    - [x] Extracción de datos de usuario
   - [ ] Control de roles (Admin/Manager/Cliente)
-    - Middleware de autorización
-    - Protección de rutas por roles
+    - [ ] Middleware de autorización
+    - [ ] Protección de rutas por roles
 
 #### API Base (Parcialmente Completado) 
 - [x] Estructura de rutas modular (SvelteKit)

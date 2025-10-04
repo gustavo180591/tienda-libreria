@@ -1,0 +1,72 @@
+{
+  "$schema": "https://mcp.example/schema/playbook.v1.json",
+  "name": "backlog_from_requirements",
+  "description": "Genera historias Gherkin y crea issues en Linear a partir de requisitos.",
+  "inputs": {
+    "requirementsPath": {"default": "${REQUIREMENTS_PATH}"},
+    "teamId": {"default": "${LINEAR_TEAM_ID}"},
+    "assignee": {"default": "${DEFAULT_ASSIGNEE}"},
+    "labels": {"default": "${DEFAULT_LABELS}"},
+    "projectPrefix": {"default": "${PROJECT_PREFIX}"},
+    "outputDir": {"default": "${OUTPUT_DIR}"}
+  },
+  "steps": [
+    {
+      "id": "read-reqs",
+      "server": "filesystem",
+      "action": "readFile",
+      "args": { "path": "${requirementsPath}" },
+      "out": "reqText"
+    },
+    {
+      "id": "parse-gherkin",
+      "server": "llm",
+      "action": "prompt",
+      "args": {
+        "templatePath": "./tools/mcp/prompts/gherkin.md",
+        "vars": { "requirements": "{{reqText}}" }
+      },
+      "out": "gherkinDoc"
+    },
+    {
+      "id": "write-gherkin",
+      "server": "filesystem",
+      "action": "writeFile",
+      "args": {
+        "path": "${outputDir}/backlog_gherkin.md",
+        "content": "{{gherkinDoc}}"
+      }
+    },
+    {
+      "id": "split-scenarios",
+      "server": "llm",
+      "action": "prompt",
+      "args": {
+        "prompt": "Del siguiente documento Gherkin, crea una lista JSON de historias, cada una con: title, description, acceptanceCriteria (array), labels (array). Documento:\n\n{{gherkinDoc}}"
+      },
+      "out": "storiesJson"
+    },
+    {
+      "id": "create-issues",
+      "server": "linear",
+      "action": "createIssues",
+      "args": {
+        "teamId": "${teamId}",
+        "assignee": "${assignee}",
+        "labels": "${labels}",
+        "stories": "{{storiesJson}}",
+        "titlePrefix": "${projectPrefix}"
+      },
+      "out": "issueResults"
+    },
+    {
+      "id": "save-issues",
+      "server": "filesystem",
+      "action": "writeFile",
+      "args": {
+        "path": "${outputDir}/created_issues.json",
+        "content": "{{issueResults}}"
+      }
+    }
+  ]
+}

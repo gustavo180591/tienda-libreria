@@ -1,0 +1,8 @@
+{
+  "servers": [
+    { "path": "./tools/mcp/servers/linear.config.json" },
+    { "path": "./tools/mcp/servers/github.config.json" },
+    { "name": "filesystem", "type": "filesystem" },
+    { "name": "llm", "type": "llm" }
+  ]
+}

@@ -1,0 +1,11 @@
+{
+  "name": "github",
+  "type": "github",
+  "baseUrl": "https://api.github.com",
+  "auth": { "type": "env", "var": "GITHUB_TOKEN" },
+  "defaults": {
+    "owner": "${GITHUB_OWNER}",
+    "repo": "${GITHUB_REPO}"
+  },
+  "capabilities": ["createPullRequest", "commentPullRequest", "listPullRequests", "createRelease"]
+}
