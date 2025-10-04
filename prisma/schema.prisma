@@ -17,6 +17,9 @@ enum Role {
   ADMIN
   MANAGER
   CUSTOMER
+  INSTITUTION
+  TEACHER
+  WHOLESALE
 }
 
 enum Currency {
@@ -24,28 +27,210 @@ enum Currency {
   USD
 }
 
+enum QuotationStatus {
+  DRAFT
+  SENT
+  CONVERTED
+  EXPIRED
+  CANCELLED
+  ACCEPTED
+  REJECTED
+}
+
+enum NotificationType {
+  ORDER_UPDATE
+  SHIPMENT_UPDATE
+  PAYMENT_UPDATE
+  PROMOTION
+  SYSTEM
+  ACCOUNT
+  ORDER_CONFIRMATION
+  ORDER_SHIPPED
+  PAYMENT_RECEIVED
+  QUOTATION_CREATED
+  QUOTATION_REMINDER
+  ACCOUNT_ACTIVITY
+}
+
 enum OrderStatus {
   PENDING
   PROCESSING
-  COMPLETED
+  SHIPPED
+  DELIVERED
   CANCELLED
+  REFUNDED
+  RETURNED
+  PAYMENT_RECEIVED
 }
 
 // ================================ MODELS =====================================
+// School Supply Lists
+model SchoolSupplyList {
+  id          String    @id @default(cuid())
+  name        String    @db.VarChar(120)
+  description String?   @db.Text
+  items       Json      // Array of { productId, variantId, quantity, notes? }
+  isTemplate  Boolean   @default(false)
+  userId      String?
+  user        User?     @relation(fields: [userId], references: [id])
+  
+  deletedAt   DateTime? @default(dbgenerated("NULL")) @map("deleted_at")
+  createdAt   DateTime  @default(now()) @map("created_at")
+  updatedAt   DateTime  @updatedAt @map("updated_at")
+  
+  @@map("school_supply_lists")
+  @@index([userId])
+}
+
+// Quotations/Budgets
+model Quotation {
+  id          String    @id @default(cuid())
+  reference   String    @unique @default(uuid()) @db.VarChar(36)
+  items       Json      // Array of { productId, variantId, quantity, unitPrice, name, sku, variantName? }
+  subtotal    Decimal   @db.Decimal(10, 2)
+  taxAmount   Decimal   @default(0) @db.Decimal(10, 2) @map("tax_amount")
+  discountAmount Decimal @default(0) @db.Decimal(10, 2) @map("discount_amount")
+  total       Decimal   @db.Decimal(10, 2)
+  currency    Currency  @default(ARS)
+  expiresAt   DateTime  @map("expires_at")
+  status      QuotationStatus @default(DRAFT)
+  notes       String?   @db.Text
+  
+  // Relations
+  userId      String?
+  user        User?     @relation(fields: [userId], references: [id])
+  orderId     String?   @unique
+  order       Order?    @relation("QuotationToOrder", fields: [orderId], references: [id])
+  
+  deletedAt   DateTime? @default(dbgenerated("NULL")) @map("deleted_at")
+  createdAt   DateTime  @default(now()) @map("created_at")
+  updatedAt   DateTime  @updatedAt @map("updated_at")
+  
+  @@map("quotations")
+  @@index([userId])
+  @@index([status])
+  @@index([expiresAt])
+}
+
+// Shipping
+model ShippingZone {
+  id           String    @id @default(cuid())
+  name         String    @db.VarChar(100)
+  description  String?   @db.Text
+  countries    String[]  // Array of ISO country codes
+  isActive     Boolean   @default(true) @map("is_active")
+  
+  // Relations
+  rates       ShippingRate[]
+  
+  deletedAt    DateTime? @default(dbgenerated("NULL")) @map("deleted_at")
+  createdAt    DateTime  @default(now()) @map("created_at")
+  updatedAt    DateTime  @updatedAt @map("updated_at")
+  
+  @@map("shipping_zones")
+  @@index([isActive])
+}
+
+model ShippingRate {
+  id             String    @id @default(cuid())
+  zoneId         String
+  zone           ShippingZone @relation(fields: [zoneId], references: [id])
+  name           String    @db.VarChar(100)
+  minOrderValue  Decimal   @default(0) @db.Decimal(10, 2) @map("min_order_value")
+  maxOrderValue  Decimal?  @db.Decimal(10, 2) @map("max_order_value")
+  price          Decimal   @db.Decimal(10, 2)
+  estimatedDays  String?   @db.VarChar(50) @map("estimated_days")
+  isActive       Boolean   @default(true) @map("is_active")
+  
+  deletedAt      DateTime? @default(dbgenerated("NULL")) @map("deleted_at")
+  createdAt      DateTime  @default(now()) @map("created_at")
+  updatedAt      DateTime  @updatedAt @map("updated_at")
+  
+  @@map("shipping_rates")
+  @@index([zoneId, isActive])
+}
+
+// Notifications
+model Notification {
+  id           String           @id @default(cuid())
+  type         NotificationType
+  title        String           @db.VarChar(200)
+  message      String           @db.Text
+  isRead       Boolean          @default(false) @map("is_read")
+  metadata     Json?            // Additional data like orderId, quotationId, etc.
+  
+  // Relations
+  userId       String
+  user         User             @relation(fields: [userId], references: [id])
+  
+  scheduledAt  DateTime?        @map("scheduled_at")
+  readAt       DateTime?        @map("read_at")
+  createdAt    DateTime         @default(now()) @map("created_at")
+  updatedAt    DateTime         @updatedAt @map("updated_at")
+  
+  @@map("notifications")
+  @@index([userId, isRead])
+  @@index([type])
+}
+
+// Audit Log
+model AuditLog {
+  id          String    @id @default(cuid())
+  action      String    @db.VarChar(100)
+  entityType  String    @db.VarChar(50) @map("entity_type")
+  entityId    String    @db.VarChar(100) @map("entity_id")
+  userId      String?
+  user        User?     @relation(fields: [userId], references: [id])
+  oldData     Json?     @map("old_data")
+  newData     Json?     @map("new_data")
+  ipAddress   String?   @db.VarChar(45) @map("ip_address")
+  userAgent   String?   @db.Text @map("user_agent")
+  
+  createdAt   DateTime  @default(now()) @map("created_at")
+  
+  @@map("audit_logs")
+  @@index([entityType, entityId])
+  @@index([userId])
+  @@index([createdAt])
+}
 // Usuarios
 model User {
-  id           String    @id @default(cuid())
-  email        String    @unique @db.Citext   // Búsqueda case-insensitive
-  passwordHash String
-  firstName    String?   @db.VarChar(80)
-  lastName     String?   @db.VarChar(80)
-  role         Role      @default(CUSTOMER)
-  deletedAt    DateTime? @default(dbgenerated("NULL")) @map("deleted_at")
+  id              String      @id @default(cuid())
+  email           String      @unique @db.Citext   // Búsqueda case-insensitive
+  passwordHash    String
+  firstName       String?     @db.VarChar(80)
+  lastName        String?     @db.VarChar(80)
+  role            Role        @default(CUSTOMER)
+  
+  // Institution/Wholesale fields
+  institutionId   String?     // For users belonging to an institution
+  institution     Institution? @relation(fields: [institutionId], references: [id])
+  taxId           String?     @db.VarChar(20)   // CUIT/CUIL for institutions/wholesale
+  isVerified      Boolean     @default(false)   // For wholesale account verification
+  
+  // Contact information
+  phone           String?     @db.VarChar(20)
+  address         String?     @db.Text
+  city            String?     @db.VarChar(100)
+  state           String?     @db.VarChar(100)
+  postalCode      String?     @db.VarChar(20) @map("postal_code")
+  
+  // Preferences
+  emailVerified   Boolean     @default(false) @map("email_verified")
+  marketingOptIn  Boolean     @default(false) @map("marketing_opt_in")
+  
+  // Timestamps
+  lastLoginAt     DateTime?   @map("last_login_at")
+  deletedAt       DateTime?   @default(dbgenerated("NULL")) @map("deleted_at")
   
   // Relaciones
-  orders    Order[]
-  addresses Address[]
-  carts     Cart[]
+  orders            Order[]
+  quotations        Quotation[]
+  notifications     Notification[]
+  auditLogs         AuditLog[]
+  addresses         Address[]
+  carts             Cart[]
+  schoolSupplyLists SchoolSupplyList[]  // One-to-many relation with SchoolSupplyList
   
   createdAt DateTime @default(now()) @map("created_at")
   updatedAt DateTime @updatedAt @map("updated_at")
@@ -76,28 +261,42 @@ model Category {
 
 // Productos
 model Product {
-  id          String    @id @default(cuid())
-  name        String    @db.VarChar(160)
-  slug        String    @unique @db.Citext   // Búsqueda case-insensitive
-  description String?   @db.Text
-  isActive    Boolean   @default(true) @map("is_active")
-  featured    Boolean   @default(false)
-  categoryId  String
+  id              String    @id @default(cuid())
+  name            String    @db.VarChar(160)
+  slug            String    @unique @db.Citext   // Búsqueda case-insensitive
+  description     String?   @db.Text
+  isActive        Boolean   @default(true) @map("is_active")
+  featured        Boolean   @default(false)
+  categoryId      String
+  
+  // New fields
+  isbn            String?   @db.VarChar(13)      // For books
+  author          String?   @db.VarChar(120)     // For books
+  publisher       String?   @db.VarChar(120)     // For books
+  gradeLevel      String?   @db.VarChar(50)      // e.g., "Primario 1er Grado"
+  subject         String?   @db.VarChar(100)     // e.g., "Matemáticas"
+  isEducational   Boolean   @default(false)
+  reorderPoint    Int?      @default(10)         // Alert when stock reaches this level
+  isWholesaleOnly Boolean   @default(false)
   
   // Relaciones
-  category Category   @relation(fields: [categoryId], references: [id])
-  variants ProductVariant[]
-  media    Media[]    @relation("ProductMedia")
-  orderItems OrderItem[]
-  cartItems CartItem[]
+  category        Category        @relation(fields: [categoryId], references: [id])
+  variants        ProductVariant[]
+  media           Media[]         @relation("ProductMedia")
+  orderItems      OrderItem[]
+  cartItems       CartItem[]
+  bulkPricings    BulkPricing[]   // For bulk/wholesale pricing
   
-  deletedAt DateTime? @default(dbgenerated("NULL")) @map("deleted_at")
-  createdAt DateTime  @default(now()) @map("created_at")
-  updatedAt DateTime  @updatedAt @map("updated_at")
+  deletedAt       DateTime? @default(dbgenerated("NULL")) @map("deleted_at")
+  createdAt       DateTime  @default(now()) @map("created_at")
+  updatedAt       DateTime  @updatedAt @map("updated_at")
   
   // Índices
   @@index([categoryId, isActive, featured])
   @@index([createdAt])
+  @@index([isbn])
+  @@index([isEducational])
+  @@index([isWholesaleOnly])
   @@map("products")
 }
 
@@ -154,20 +353,35 @@ model Media {
 // Órdenes
 model Order {
   id               String      @id @default(cuid())
+  orderNumber      String      @unique @default(uuid()) @db.VarChar(36)
+  orderType        String      @default("RETAIL") // RETAIL, WHOLESALE, INSTITUTIONAL
   userId           String?
   user             User?       @relation(fields: [userId], references: [id])
   status           OrderStatus @default(PENDING)
+  
+  // Financials
+  subtotal         Decimal     @default(0) @db.Decimal(10, 2)
   total            Decimal     @default(0) @db.Decimal(10, 2)
   currency         Currency    @default(ARS)
   shippingAmount   Decimal     @default(0) @db.Decimal(10, 2) @map("shipping_amount")
   taxAmount        Decimal     @default(0) @db.Decimal(10, 2) @map("tax_amount")
   discountAmount   Decimal     @default(0) @db.Decimal(10, 2) @map("discount_amount")
+  
+  // Shipping and Billing
+  shippingMethod   String?     @db.VarChar(100)
+  trackingNumber   String?     @db.VarChar(100)
   shippingAddress  Json?       @map("shipping_address")
   billingAddress   Json?       @map("billing_address")
   
+  // Timestamps for order lifecycle
+  paidAt           DateTime?   @map("paid_at")
+  shippedAt        DateTime?   @map("shipped_at")
+  deliveredAt      DateTime?   @map("delivered_at")
+  
   // Relaciones
-  items    OrderItem[]
-  payments Payment[]
+  items      OrderItem[]
+  payments   Payment[]
+  quotation  Quotation? @relation("QuotationToOrder")  // One-to-one relation with Quotation
   
   createdAt DateTime @default(now()) @map("created_at")
   updatedAt DateTime @updatedAt @map("updated_at")
@@ -182,16 +396,24 @@ model Order {
 
 // Ítems de Orden
 model OrderItem {
-  id           String    @id @default(cuid())
-  orderId      String    @map("order_id")
-  order        Order     @relation(fields: [orderId], references: [id], onDelete: Cascade)
-  productId    String?   @map("product_id")
-  product      Product?  @relation(fields: [productId], references: [id], onDelete: SetNull)
-  variantId    String?   @map("variant_id")
-  variant      ProductVariant? @relation(fields: [variantId], references: [id], onDelete: SetNull)
-  quantity     Int       @default(1)
-  unitPrice    Decimal   @db.Decimal(10, 2) @map("unit_price")
-  lineTotal    Decimal   @db.Decimal(10, 2) @map("line_total")
+  id               String    @id @default(cuid())
+  orderId          String    @map("order_id")
+  order            Order     @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  productId        String?   @map("product_id")
+  product          Product?  @relation(fields: [productId], references: [id], onDelete: SetNull)
+  variantId        String?   @map("variant_id")
+  variant          ProductVariant? @relation(fields: [variantId], references: [id], onDelete: SetNull)
+  quantity         Int       @default(1)
+  
+  // Pricing
+  unitPrice        Decimal   @db.Decimal(10, 2) @map("unit_price")
+  originalPrice    Decimal   @db.Decimal(10, 2) @map("original_price") // Price before any discounts
+  discountAmount   Decimal   @default(0) @db.Decimal(10, 2) @map("discount_amount")
+  taxAmount        Decimal   @default(0) @db.Decimal(10, 2) @map("tax_amount")
+  lineTotal        Decimal   @db.Decimal(10, 2) @map("line_total")
+  
+  // Applied promotions/discounts
+  appliedPromotions Json?    @map("applied_promotions") // Array of { code: string, name: string, discount: number }
   
   // Snapshots para preservar información histórica
   productName  String    @db.VarChar(160) @map("product_name")
@@ -295,6 +517,71 @@ model Payment {
   @@index([reference])
   @@index([processedAt])
   @@map("payments")
+}
+
+// ============================== NEW MODELS ===================================
+
+// For managing bulk/wholesale pricing
+model BulkPricing {
+  id          String    @id @default(cuid())
+  productId   String
+  product     Product   @relation(fields: [productId], references: [id])
+  minQuantity Int
+  price       Decimal   @db.Decimal(10, 2)
+  isActive    Boolean   @default(true)
+  startsAt    DateTime?
+  expiresAt   DateTime?
+  
+  createdAt   DateTime  @default(now()) @map("created_at")
+  updatedAt   DateTime  @updatedAt @map("updated_at")
+  
+  @@index([productId, isActive])
+  @@map("bulk_pricing")
+}
+
+// For managing promotions
+model Promotion {
+  id            String    @id @default(cuid())
+  code          String    @unique
+  description   String    @db.Text
+  discountType  String    @db.VarChar(20) // PERCENTAGE, FIXED_AMOUNT
+  discountValue Decimal   @db.Decimal(10, 2)
+  minPurchase   Decimal?  @db.Decimal(10, 2)
+  maxUses       Int?
+  usedCount     Int       @default(0)
+  startsAt      DateTime
+  expiresAt     DateTime
+  isActive      Boolean   @default(true)
+  
+  createdAt     DateTime  @default(now()) @map("created_at")
+  updatedAt     DateTime  @updatedAt @map("updated_at")
+  
+  @@index([code, isActive])
+  @@index([expiresAt])
+  @@map("promotions")
+}
+
+// For school/institution management
+model Institution {
+  id           String    @id @default(cuid())
+  name         String    @db.VarChar(200)
+  taxId        String    @unique @db.VarChar(20)
+  address      String    @db.Text
+  phone        String?   @db.VarChar(20)
+  email        String?   @db.VarChar(120)
+  contactName  String?   @db.VarChar(120) @map("contact_name")
+  isActive     Boolean   @default(true)
+  
+  // Relations
+  users       User[]
+  
+  createdAt    DateTime  @default(now()) @map("created_at")
+  updatedAt    DateTime  @updatedAt @map("updated_at")
+  
+  @@index([name])
+  @@index([taxId])
+  @@index([isActive])
+  @@map("institutions")
 }
 
 // ============================== EXTENSIONES ==================================

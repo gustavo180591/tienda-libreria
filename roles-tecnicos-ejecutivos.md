@@ -1,0 +1,14 @@
+# Roles Técnicos y Ejecutivos — Tabla Comparativa
+
+| Rol | Misión | Decide sobre | Responsabilidades | KPIs clave |
+|---|---|---|---|---|
+| **CTO (Chief Technology Officer)** | Definir visión y estrategia tecnológica alineada al negocio (3–5 años). | Roadmap tech, arquitectura macro, inversión, build vs. buy, talento senior. | Gobernanza técnica, escalabilidad, seguridad, cultura de ingeniería, innovación aplicada. | Time-to-market, SLOs, costo/servicio, % roadmap cumplido, rotación/seniority mix. |
+| **VP of Engineering** | Ejecutar la estrategia con personas, procesos y delivery predecible. | Org de equipos, hiring/mentoring, estándares SDLC, presupuesto operativo. | Velocidad y calidad de entrega, productividad, carrera de ICs y managers. | Deploys/semana, lead time, defect rate, eNPS, OKRs cumplidos. |
+| **Lead Front-End Architect** | Diseñar y custodiar la arquitectura del frontend y el design system. | Librerías, patrones (estado/routing/SSR), límites entre apps/microfrontends. | Escalabilidad UI, accesibilidad, performance, consistencia visual/técnica. | Core Web Vitals, deuda técnica, adopción del design system, TTFB/LCP. |
+| **Mobile Tech Lead** | Liderar la dirección técnica mobile priorizando UX y performance. | Arquitectura móvil, modularización, offline-first, CI/CD móvil, releases. | Calidad de apps, estabilidad en prod, ritmo de features móviles. | Crash-free rate, tiempo de arranque, rating en stores, tiempo de review/release, cobertura de tests. |
+| **Ingeniero/a de Software – Fullstack** | Entregar features end-to-end (FE/BE/DB; a veces DevOps). | Diseño de soluciones, elección de patrones/stack dentro de guías. | Código limpio, pruebas, observabilidad, seguridad básica, documentación. | Historias cerradas con calidad, bugs post-release, cobertura/MTTR, efectividad en PRs. |
+| **Doctora en IA (Research/Applied)** | Investigar/aplicar IA/ML para ventaja medible. | Modelos/algoritmos, datasets, métricas, trade-offs precisión–coste–latencia. | Prototipos, experimentos rigurosos, papers/reports, transferencia a producción (MLOps). | AUC/F1/RMSE, uplift de negocio, reproducibilidad, coste por inferencia/latencia. |
+| **Head of Cloud Infrastructure** | Proveer plataformas cloud seguras, confiables y eficientes. | Proveedor (AWS/GCP/Azure), topología, IaC, observabilidad, límites/capacidad, FinOps. | SLO/SLA, resiliencia, automatización, cumplimiento, control de costos. | Uptime, MTTR/MTTD, costo por workload, % IaC, tiempo de aprovisionamiento. |
+| **Security Researcher** | Descubrir vulnerabilidades y elevar el nivel de seguridad. | Priorización de superficies, tooling (fuzzing, reversing), alcance de pruebas. | Hallazgos accionables, PoCs, recomendaciones y hardening. | Vulns críticas encontradas/remediadas, tiempo a remediación, cobertura de superficies, reducción de riesgo. |
+
+> **Nota:** Puedes copiar y pegar esta tabla directamente en GitHub, Notion o cualquier editor que soporte Markdown.
