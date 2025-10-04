@@ -14,7 +14,8 @@
     "lint": "prettier --check . && eslint .",
     "seed": "node prisma/seed.js",
     "worker:dev": "node --watch src/worker/index.js",
-    "update-progress": "node scripts/update-progress.js"
+    "update-progress": "node scripts/update-progress.js",
+    "update-roadmap": "node --experimental-json-modules scripts/update-roadmap.js"
   },
   "devDependencies": {
     "@eslint/compat": "^1.2.5",
