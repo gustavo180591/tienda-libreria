@@ -1,4 +1,4 @@
-import { createQuery, useMutation, useQueryClient } from '@tanstack/svelte-query';
+import { createQuery, createMutation, useQueryClient } from '@tanstack/svelte-query';
 import { browser } from '$app/environment';
 
 // Obtener el carrito actual
@@ -21,7 +21,7 @@ export function useCart() {
 export function useAddToCart() {
   const queryClient = useQueryClient();
   
-  return useMutation({
+  return createMutation({
     mutationFn: async ({ variantId, quantity }: { variantId: string; quantity: number }) => {
       const response = await fetch('/api/cart/items', {
         method: 'POST',
@@ -49,7 +49,7 @@ export function useAddToCart() {
 export function useRemoveFromCart() {
   const queryClient = useQueryClient();
   
-  return useMutation({
+  return createMutation({
     mutationFn: async (itemId: string) => {
       const response = await fetch(`/api/cart/items/${itemId}`, {
         method: 'DELETE'
@@ -71,7 +71,7 @@ export function useRemoveFromCart() {
 export function useUpdateCartItem() {
   const queryClient = useQueryClient();
   
-  return useMutation({
+  return createMutation({
     mutationFn: async ({ itemId, quantity }: { itemId: string; quantity: number }) => {
       const response = await fetch(`/api/cart/items/${itemId}`, {
         method: 'PATCH',

@@ -1,9 +1,17 @@
 import { createQuery } from '@tanstack/svelte-query';
 import { browser } from '$app/environment';
 
+// Tipo para la categoría
+interface Category {
+  id: string;
+  name: string;
+  slug: string;
+  // Agrega otras propiedades según tu modelo de datos
+}
+
 // Obtener todas las categorías
 export function useCategories() {
-  return createQuery({
+  const query = createQuery<Category[]>({
     queryKey: ['categories'],
     queryFn: async () => {
       const response = await fetch('/api/categories');
@@ -14,13 +22,15 @@ export function useCategories() {
     },
     enabled: browser,
     staleTime: 1000 * 60 * 10, // 10 minutos
-    gcTime: 1000 * 60 * 30, // 30 minutos
+    cacheTime: 1000 * 60 * 30, // 30 minutos
   });
+  
+  return query;
 }
 
 // Obtener una categoría por slug
 export function useCategory(slug: string) {
-  return createQuery({
+  const query = createQuery<Category>({
     queryKey: ['category', slug],
     queryFn: async () => {
       const response = await fetch(`/api/categories/${slug}`);
